@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { Button, MoodPicker } from '@tg/ui';
-import { analyzeEntry, detectCrisisLanguage } from '@tg/core';
-import type { Mood } from '@tg/core';
+import { analyzeEntry, detectCrisisLanguage, useAuthStore } from '@tg/core';
+import type { Mood, Theme } from '@tg/core';
+import { saveEntry } from '@tg/supabase';
 
 export default function NewEntryScreen() {
   const [body, setBody] = useState('');
   const [mood, setMood] = useState<Mood | null>(null);
+  const [analysis, setAnalysis] = useState<{ themes: Theme[]; rawAnalysis: unknown } | null>(null);
   const [step, setStep] = useState<'write' | 'mood' | 'crisis'>('write');
   const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const userId = useAuthStore((s) => s.user?.id);
 
   async function handleAnalyze() {
     if (detectCrisisLanguage(body)) {
@@ -20,6 +24,7 @@ export default function NewEntryScreen() {
     try {
       const result = await analyzeEntry(body);
       setMood(result.moodPrimary);
+      setAnalysis({ themes: result.themes, rawAnalysis: result });
     } catch {
       // Analysis failed — let user pick manually
     } finally {
@@ -28,9 +33,23 @@ export default function NewEntryScreen() {
     }
   }
 
-  function handleSave() {
-    // TODO: persist entry, run milestone checks, award seeds
-    router.back();
+  async function handleSave(isCrisis = false) {
+    if (!userId || !mood) return;
+    setSaving(true);
+    try {
+      await saveEntry({
+        userId,
+        body,
+        moodPrimary: mood,
+        moodSecondary: null,
+        themes: analysis?.themes ?? [],
+        rawAnalysis: analysis?.rawAnalysis as never,
+        isCrisis,
+      });
+    } finally {
+      setSaving(false);
+      router.back();
+    }
   }
 
   if (step === 'crisis') {
@@ -47,7 +66,7 @@ export default function NewEntryScreen() {
           </Text>
           <View style={[styles.actions, { marginTop: 32 }]}>
             <Button label="Go back" onPress={() => setStep('write')} variant="ghost" />
-            <Button label="Save entry" onPress={handleSave} />
+            <Button label="Save entry" onPress={() => handleSave(true)} disabled={saving} />
           </View>
         </View>
       </View>
@@ -84,7 +103,7 @@ export default function NewEntryScreen() {
             <MoodPicker selected={mood} onSelect={setMood} />
             <View style={styles.actions}>
               <Button label="Back" onPress={() => setStep('write')} variant="ghost" />
-              <Button label="Save Entry" onPress={handleSave} disabled={mood === null} />
+              <Button label="Save Entry" onPress={() => handleSave(false)} disabled={mood === null || saving} />
             </View>
           </>
         )}

@@ -177,6 +177,32 @@ Paid tier details to be fleshed out later.
 
 ---
 
+## Admin
+
+Admin functionality is post-MVP but the data model supports it from day one (`role` column on `profiles`).
+
+### Access model
+- `role: 'user' | 'admin'` on `profiles`
+- Admin operations use Supabase service-role key (server-side only, never in the mobile app)
+- Admin UI: simple web dashboard (Next.js, part of the post-MVP web app)
+
+### Admin capabilities
+
+| Capability | Notes |
+|---|---|
+| View aggregated stats | DAU, retention, seed earn rates, popular plants — no PII |
+| Manage user tiers | Upgrade/downgrade free ↔ paid |
+| Crisis detection audit log | Trigger counts by date, never entry content |
+| Feature flags | Enable/disable OpenAI analysis, toggle paid features |
+| Support access | Read-only view of a specific user's garden/entries (requires user consent or legal basis) |
+
+### RLS rules
+- Admin role bypasses normal user-scoped RLS via a separate policy: `auth.jwt() ->> 'role' = 'admin'`
+- Admin role is set server-side only — never writable by the mobile client
+- All admin actions are logged (audit table, post-MVP)
+
+---
+
 ## Tech Stack
 
 | Layer | Choice |
@@ -268,6 +294,7 @@ thought_garden/
 ```
 User
   id, email, created_at, streak_count, last_entry_date
+  role: 'user' | 'admin'
 
 Entry
   id, user_id, body, created_at

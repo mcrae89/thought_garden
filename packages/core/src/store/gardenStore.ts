@@ -11,6 +11,7 @@ interface GardenState {
   plantSeed: (seedId: string, x: number, y: number) => void;
   movePlant: (plantId: string, x: number, y: number) => void;
   moveToGreenhouse: (plantId: string) => void;
+  moveToGarden: (plantId: string, x: number, y: number) => void;
 }
 
 export const useGardenStore = create<GardenState>((set) => ({
@@ -63,6 +64,13 @@ export const useGardenStore = create<GardenState>((set) => ({
         p.id === plantId
           ? { ...p, location: 'greenhouse', gardenPositionX: null, gardenPositionY: null }
           : p
+      ),
+    })),
+
+  moveToGarden: (plantId, x, y) =>
+    set((s) => ({
+      plants: s.plants.map((p) =>
+        p.id === plantId ? { ...p, location: 'garden', gardenPositionX: x, gardenPositionY: y } : p
       ),
     })),
 }));

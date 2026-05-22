@@ -13,7 +13,7 @@
   "pnpm": {
     "overrides": {
       "react": "18.3.1",
-      "react-native": "0.76.5"
+      "react-native": "0.76.9"
     }
   }
 }

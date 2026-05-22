@@ -1,8 +1,6 @@
 -- Thought Garden — initial schema
 -- Run via: supabase db push
 
-create extension if not exists "uuid-ossp";
-
 -- ─── Users (extends Supabase auth.users) ────────────────────────────────────
 create table public.profiles (
   id               uuid primary key references auth.users(id) on delete cascade,
@@ -16,7 +14,7 @@ create policy "Users manage own profile"
 
 -- ─── Entries ────────────────────────────────────────────────────────────────
 create table public.entries (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   user_id           uuid not null references public.profiles(id) on delete cascade,
   body              text not null,
   mood_primary      text,
@@ -32,7 +30,7 @@ create policy "Users manage own entries"
 
 -- ─── Seeds ──────────────────────────────────────────────────────────────────
 create table public.seeds (
-  id               uuid primary key default uuid_generate_v4(),
+  id               uuid primary key default gen_random_uuid(),
   user_id          uuid not null references public.profiles(id) on delete cascade,
   entry_id         uuid references public.entries(id) on delete set null,
   plant_species    text not null,
@@ -48,7 +46,7 @@ create policy "Users manage own seeds"
 
 -- ─── Plants ─────────────────────────────────────────────────────────────────
 create table public.plants (
-  id                  uuid primary key default uuid_generate_v4(),
+  id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references public.profiles(id) on delete cascade,
   seed_id             uuid not null references public.seeds(id) on delete cascade,
   species             text not null,
@@ -71,7 +69,7 @@ create policy "Users manage own plants"
 
 -- ─── Garden Config ───────────────────────────────────────────────────────────
 create table public.garden_configs (
-  id                   uuid primary key default uuid_generate_v4(),
+  id                   uuid primary key default gen_random_uuid(),
   user_id              uuid not null unique references public.profiles(id) on delete cascade,
   garden_grid_size     text not null default '4x4',
   greenhouse_capacity  int  not null default 10,
@@ -83,7 +81,7 @@ create policy "Users manage own garden config"
 
 -- ─── Streak Log ─────────────────────────────────────────────────────────────
 create table public.streak_logs (
-  id       uuid primary key default uuid_generate_v4(),
+  id       uuid primary key default gen_random_uuid(),
   user_id  uuid not null references public.profiles(id) on delete cascade,
   date     date not null,
   unique (user_id, date)
@@ -105,7 +103,7 @@ create policy "Users manage own theme counts"
 
 -- ─── Seed Milestones (dedup) ─────────────────────────────────────────────────
 create table public.seed_milestones (
-  id             uuid primary key default uuid_generate_v4(),
+  id             uuid primary key default gen_random_uuid(),
   user_id        uuid not null references public.profiles(id) on delete cascade,
   theme          text,
   milestone_type text not null,

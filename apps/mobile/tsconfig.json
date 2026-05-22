@@ -9,10 +9,24 @@
     "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
-      "@tg/core": ["../../packages/core/src/index.ts"],
-      "@tg/ui": ["../../packages/ui/src/index.ts"],
-      "@tg/supabase": ["../../packages/supabase/src/index.ts"]
+      "@tg/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@tg/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@tg/supabase": [
+        "../../packages/supabase/src/index.ts"
+      ]
     }
   },
-  "include": ["app", "src", "*.ts", "*.tsx"]
+  "include": [
+    "app",
+    "src",
+    "*.ts",
+    "*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "extends": "expo/tsconfig.base"
 }
