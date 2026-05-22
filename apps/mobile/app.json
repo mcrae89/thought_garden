@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Thought Garden",
+    "slug": "thought-garden",
+    "version": "1.0.0",
+    "scheme": "thoughtgarden",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a2e1a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.thoughtgarden.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a2e1a"
+      },
+      "package": "com.thoughtgarden.app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "thought-garden",
+  "private": true,
+  "version": "0.0.1",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "mobile": "pnpm --filter mobile start",
+    "build:core": "pnpm --filter @tg/core build",
+    "build:ui": "pnpm --filter @tg/ui build",
+    "build:supabase": "pnpm --filter @tg/supabase build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "18.3.1",
+      "react-native": "0.76.5"
+    }
+  }
+}
