@@ -296,7 +296,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - **Step 3 — Derive planted variant in Piskel:**
       For each potted sprite sheet: open in Piskel (piskelapp.com) or LibreSprite, erase the pot pixels on all 4 frames, save as the planted variant filename.
     - **Emotion-to-plant reference for prompts:**
-      happy=Sunflower, sad=Bleeding Heart, angry=Cactus, anxious=Passionflower, calm=Lavender, grateful=Hydrangea, love=Rose, hope=Daffodil, excited=Bird of Paradise, lonely=Forget-Me-Not, proud=Orchid, confused=Wisteria, peaceful=Lotus, nostalgic=Cherry Blossom, jealous=Nightshade, inspired=Iris, guilty=Thistle, curious=Snapdragon, frustrated=Bramble, content=Chamomile, overwhelmed=Morning Glory, brave=Protea, embarrassed=Mimosa, surprised=Jack-in-the-Pulpit, bored=Dandelion, determined=Gladiolus, compassionate=Aloe Vera, melancholy=Bluebell, joyful=Daisy, vulnerable=Snowdrop
+      happy=Sunflower, sad=Bleeding Heart, angry=Cactus, anxious=Passionflower, calm=Lavender, grateful=Hydrangea, love=Rose, hope=Daffodil, excited=Bird of Paradise, lonely=Forget-Me-Not, proud=Orchid, confused=Wisteria, peaceful=Lotus, nostalgic=Cherry Blossom, jealous=Nightshade, inspired=Iris, guilty=Thistle, curious=Snapdragon, frustrated=Bramble, content=Chamomile, overwhelmed=Morning Glory, brave=Protea, embarrassed=Mimosa, surprised=Stargazer Lily, bored=Dandelion, determined=Gladiolus, compassionate=Aloe Vera, melancholy=Bluebell, joyful=Daisy, vulnerable=Snowdrop
     - _Requirements: 7.1, 7.5, 7.6_
 
 - [x] 10. Implement sync service and offline support

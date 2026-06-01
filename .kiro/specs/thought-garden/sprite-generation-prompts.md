@@ -184,11 +184,11 @@ Generate a 32x32 pixel art sprite sheet showing a Mimosa in a small clay pot at 
 Planted variant: open in Piskel, erase pot pixels on all 4 frames, save as `assets/sprites/plants/embarrassed-mimosa-planted.png`
 
 ### Surprised — Jack-in-the-Pulpit
-**Filename:** `assets/sprites/plants/surprised-jack-in-the-pulpit-potted.png`
+**Filename:** `assets/sprites/plants/surprised-stargazer-lily-potted.png`
 ```
-Generate a 32x32 pixel art sprite sheet showing a Jack-in-the-Pulpit in a small clay pot at 4 growth stages (seed, sprout, full plant, blooming), arranged horizontally in a single image, in the same style as the reference image, transparent background, top-down view, no gaps between frames, frames touching edge to edge, no padding, no border, sprites fill the entire canvas. 
+Generate a 32x32 pixel art sprite sheet showing a Stargazer Lily in a small clay pot at 4 growth stages (seed, sprout, full plant, blooming), arranged horizontally in a single image, in the same style as the reference image, transparent background, top-down view, no gaps between frames, frames touching edge to edge, no padding, no border, sprites fill the entire canvas. 
 ```
-Planted variant: open in Piskel, erase pot pixels on all 4 frames, save as `assets/sprites/plants/surprised-jack-in-the-pulpit-planted.png`
+Planted variant: open in Piskel, erase pot pixels on all 4 frames, save as `assets/sprites/plants/surprised-stargazer-lily-planted.png`
 
 ### bored — Dandelion
 **Filename:** `assets/sprites/plants/bored-dandelion-potted.png`

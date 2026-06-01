@@ -24,7 +24,7 @@ export const EMOTION_TO_PLANT: Record<Emotion, string> = {
   overwhelmed: 'Morning Glory',
   brave: 'Protea',
   embarrassed: 'Mimosa',
-  surprised: 'Jack-in-the-Pulpit',
+  surprised: 'Stargazer Lily',
   bored: 'Dandelion',
   determined: 'Gladiolus',
   compassionate: 'Aloe Vera',

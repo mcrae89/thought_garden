@@ -52,7 +52,7 @@ The following table defines the canonical mapping between each emotion and its c
 | 21 | Overwhelmed | Morning Glory | Spreads rapidly and covers everything, hard to contain |
 | 22 | Brave | Protea | Bold, striking, resilient bloom |
 | 23 | Embarrassed | Mimosa (Sensitive Plant) | Shrinks when touched |
-| 24 | Surprised | Jack-in-the-Pulpit | Unexpected, dramatic form |
+| 24 | Surprised | Stargazer Lily | Unexpected, dramatic form |
 | 25 | Bored | Dandelion | Drifts away, restless and fleeting |
 | 26 | Determined | Gladiolus | Tall upright stem, blooms sequentially from base to tip |
 | 27 | Compassionate | Aloe Vera | Healing and nurturing others |
