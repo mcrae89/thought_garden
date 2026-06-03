@@ -14,7 +14,7 @@ The system follows a **local-first architecture** where all data operations happ
 | Backend/Auth/Database | Supabase (free tier) | 500MB database, 50K MAU auth, 1GB storage on free tier. PostgreSQL with Row Level Security. Scales to Pro tier ($25/mo) when needed. |
 | Local database | WatermelonDB | Purpose-built for React Native offline-first apps. Lazy-loaded, reactive, built-in sync protocol. Supports iOS, Android, and web. |
 | State management | Zustand | Lightweight, minimal boilerplate, works well with React Native and offline patterns. |
-| Plant visuals | PNG sprite sheets with programmatic palette swapping | Pixel art aesthetic (Stardew Valley / Farmville style) pairs naturally with AI image generation workflow via Microsoft Copilot (DALL-E 3). Palette swapping gives 3,720 visual combinations from 120 base sprites with zero extra art. |
+| Plant visuals | PNG sprite sheets with programmatic palette swapping | Pixel art aesthetic (Stardew Valley / Farmville style) pairs naturally with AI image generation workflow via Microsoft Copilot (DALL-E 3). Palette swapping gives 3,720 visual combinations from 91 base sprites (90 plant-stage sprites + 1 shared seed sprite) with zero extra art. |
 | Navigation | Expo Router | File-based routing, works on mobile and web, deep linking support. |
 | Encryption | expo-crypto + Supabase TLS | Local encryption for at-rest data, TLS for in-transit. |
 
@@ -210,12 +210,12 @@ interface PlantVisualService {
   applyPaletteSwap(baseSprite: SpriteData, targetPalette: ColorPalette): SpriteData;
 }
 
-// 30 emotions x 4 stages x (30 color variations + 1 default) = 3,720 visual combinations
+// 30 emotions x 3 stages x (30 color variations + 1 default) = 2,790 plant-stage combinations + 1 shared seed sprite
 // Achieved through 120 base PNG sprites (32x32px) + runtime palette swapping, NOT 3,720 separate assets
 
 interface SpriteData {
   uri: string;           // Asset path to the sprite sheet PNG
-  frameIndex: number;    // Which frame in the sprite sheet (0-3 for growth stages)
+  frameIndex: number;    // Which frame in the sprite sheet (0=sprout, 1=full, 2=bloom). Seed stage uses shared seed.png, not this sheet.
   width: 32;            // Sprite width in pixels
   height: 32;           // Sprite height in pixels
 }
@@ -223,7 +223,7 @@ interface SpriteData {
 interface PlantSpriteSheet {
   emotion: Emotion;
   assetPath: string;     // e.g., "assets/sprites/plants/happy-sunflower.png"
-  frames: 4;            // 4 frames: seed, sprout, full, bloom (arranged horizontally)
+  frames: 3;            // 3 frames: sprout, full, bloom (arranged horizontally). Seed stage uses shared seed.png.
   defaultPalette: ColorPalette;
 }
 
@@ -263,7 +263,7 @@ Stardew Valley / Farmville inspired 16-bit pixel art. Top-down garden view with 
 | Category | Description | Count |
 |----------|-------------|-------|
 | Garden tilemap | Soil plots, grass, fences, paths, decorative elements | 1 tileset sheet |
-| Plant sprites | 30 plants × 4 growth stages = 120 base sprites at 32×32px | 30 sprite sheets |
+| Plant sprites | 1 shared seed sprite + 30 plants × 3 growth stages = 91 base sprites at 32×32px | 30 sprite sheets + 1 seed sprite |
 | UI elements | Seed inventory icons, achievement badges, notification frames | ~3 sheets |
 | Background/environment | Sky, seasonal variations (optional) | 1-4 assets |
 
@@ -276,7 +276,7 @@ The entire art pipeline uses Microsoft Copilot (which includes DALL-E 3) at zero
 Create one complete plant at all 4 growth stages to establish the pixel art style and serve as a visual anchor for all subsequent generations.
 
 Example prompt:
-> "Pixel art sprite sheet showing a sunflower in a pot at 4 growth stages (seed, sprout, full plant, blooming), 32x32 pixels each, Stardew Valley style, transparent background, top-down view, 16-bit retro game aesthetic"
+> "Pixel art sprite sheet showing a sunflower in a pot at 3 growth stages (sprout, full plant, blooming), 32x32 pixels each, Stardew Valley style, transparent background, top-down view, 16-bit retro game aesthetic"
 
 **Step 2: Generate each bloom-stage plant individually**
 
@@ -291,7 +291,7 @@ Using Piskel (free, browser-based) or LibreSprite (free Aseprite fork), simplify
 
 - Bloom → Full: Remove flowers/fruit, keep full leaf structure
 - Full → Sprout: Reduce to 1-2 small leaves/stems
-- Sprout → Seed: Universal seed-in-pot sprite (shared across all plants, palette-swapped)
+- Seed stage: A single shared seed sprite (`assets/sprites/plants/seed.png`) is used for all plants. It is NOT included in per-plant sprite sheets.
 
 **Step 4: Garden tileset (Sprout Lands by Cup Nooble)**
 
@@ -355,7 +355,8 @@ The palette swap system multiplies visual variety without requiring additional a
 assets/
 ├── sprites/
 │   ├── plants/
-│   │   ├── happy-sunflower.png      (sprite sheet: 4 frames for 4 stages)
+│   │   ├── seed.png                 (shared seed sprite: displayed for all plants at seed stage)
+│   │   ├── happy-sunflower.png      (sprite sheet: 3 frames for sprout, full, bloom)
 │   │   ├── sad-weeping-willow.png
 │   │   ├── angry-cactus.png
 │   │   └── ... (30 total)
@@ -378,6 +379,8 @@ assets/
 - **Sprite display**: `expo-image` for efficient PNG rendering with caching
 - **Garden grid**: Rendered as a tilemap with plants overlaid at plot positions
 - **Animations**: Frame-based sprite animation for growth transitions (swap between sprite sheet frames)
+- **Interactive objects**: Chest, mailbox, sign, and greenhouse entrance are placed as separate sprite objects at fixed map coordinates — NOT baked into the tilemap. This allows runtime state control (animations, open/close). The tilemap contains only non-interactive background tiles (grass, tilled dirt, paths, fences, trees).
+- **Mailbox animation**: Driven by Zustand notification state — idle frame (flag down) when no notifications, animated frames (flag raised) when unread notifications exist. Uses the Sprout Lands mailbox animation sprite sheet.
 
 ## Data Models
 
@@ -829,7 +832,7 @@ export const TIER_LIMITS: Record<Tier, { gardenPlots: number; greenhouseCapacity
 
 ### Property 23: Visual consistency across growth stages
 
-*For any* plant, the species visual and color variation SHALL be identical across all four growth stages (seed, sprout, full, bloom). Only the structural form changes between stages, not the identity.
+*For any* plant, the species visual and color variation SHALL be identical across the sprout, full, and bloom growth stages. When a plant is at the seed stage, the shared seed sprite (`assets/sprites/plants/seed.png`) SHALL be displayed regardless of the plant's emotion type. Only the structural form changes between the non-seed stages, not the identity.
 
 **Validates: Requirements 7.6**
 

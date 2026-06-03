@@ -266,7 +266,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
   - [x] 9.2 Implement sprite rendering and palette swap system
     - Implement `getPlantSprite` to return correct sprite frame for emotion + stage + color
     - Implement `applyPaletteSwap` for runtime color replacement in `src/modules/plant-visuals/palette-swap.ts`
-    - Ensure visual consistency across all 4 growth stages (same species/color, different form)
+    - Ensure visual consistency across sprout, full, and bloom stages (same species/color, different form). Seed stage uses shared seed.png.
     - Set up asset file structure for sprite sheets (`assets/sprites/plants/`)
     - _Requirements: 7.1, 7.5, 7.6_
 
@@ -285,19 +285,70 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Generate random plants across all stages, verify species and color unchanged
     - **Validates: Requirements 7.6**
 
-  - [ ] 9.6 Generate plant sprites using Microsoft Copilot
+  - [x] 9.6 Generate plant sprites using Microsoft Copilot
     - Use the prompt templates below to generate sprites for all 30 plant species via Microsoft Copilot (DALL-E 3)
     - **Step 1 — Style reference sheet (do this first, one time):**
-      Upload `assets/sprites/objects/Farming Plants.png` as reference in Copilot and generate the potted sunflower sprite sheet. Then in Piskel, erase the pot pixels to create the planted variant.
+      Upload `assets/sprites/objects/Farming Plants.png` as reference in Copilot and generate the potted sunflower 3-stage sprite sheet (sprout, full, bloom). Then in Piskel, erase the pot pixels on all 3 frames to create the planted variant. The seed stage is handled by the single shared seed.png sprite.
       See `sprite-generation-prompts.md` for exact prompts and filenames.
     - **Step 2 — Generate each remaining plant (29 plants, one Copilot prompt each):**
       Generate the potted variant via Copilot, then derive the planted variant in Piskel by erasing the pot pixels. The garden renderer overlays the planted sprite on a Sprout Lands tilled dirt tile.
       See `sprite-generation-prompts.md` for all prompts and filenames.
     - **Step 3 — Derive planted variant in Piskel:**
-      For each potted sprite sheet: open in Piskel (piskelapp.com) or LibreSprite, erase the pot pixels on all 4 frames, save as the planted variant filename.
+      For each potted sprite sheet: open in Piskel (piskelapp.com) or LibreSprite, erase the pot pixels on all 3 frames, save as the planted variant filename.
     - **Emotion-to-plant reference for prompts:**
       happy=Sunflower, sad=Bleeding Heart, angry=Cactus, anxious=Passionflower, calm=Lavender, grateful=Hydrangea, love=Rose, hope=Daffodil, excited=Bird of Paradise, lonely=Forget-Me-Not, proud=Orchid, confused=Wisteria, peaceful=Lotus, nostalgic=Cherry Blossom, jealous=Nightshade, inspired=Iris, guilty=Thistle, curious=Snapdragon, frustrated=Bramble, content=Chamomile, overwhelmed=Morning Glory, brave=Protea, embarrassed=Mimosa, surprised=Stargazer Lily, bored=Dandelion, determined=Gladiolus, compassionate=Aloe Vera, melancholy=Bluebell, joyful=Daisy, vulnerable=Snowdrop
-    - _Requirements: 7.1, 7.5, 7.6_
+  - [x] 9.7 Assemble garden tilemaps using Tiled
+    - Tilesets to use: `Tilled_Dirt_v2.png` (plots), `Grass_tiles_v2.png` (ground), `Fences.png` (perimeter), `signs.png` (interactive objects)
+    - Structures: greenhouse building tiles from `structures/`
+    - All maps use 16x16 tile size (native Sprout Lands size — rendered at 2x scale in the app)
+    - **Map layout (20x28 tiles):** same base for both tiers, only the tilled plot area differs
+      ```
+      . = grass    # = tilled plot    F = fence
+      G = greenhouse building         ~ = path
+      C = chest (seed storage)        M = mailbox (notifications)
+      S = sign (settings/profile)     T = tree/decoration
+
+      col:  0         9        19
+            01234567890123456789
+      r00:  ....................
+      r01:  ..T..........T..T..
+      r02:  ..T...GGGGGG.T..T..
+      r03:  ....GGGGGGGGGG.....
+      r04:  ....GGGGGGGGGG.....
+      r05:  ....GGGGGGGGGG.....
+      r06:  ....GG......GG.....
+      r07:  .......~~~~........
+      r08:  ..T....~~~~....T...
+      r09:  .....FFFFFFFF......
+      r10:  .....F######F......
+      r11:  .....F######F......
+      r12:  .....F######F......
+      r13:  .....F######F......
+      r14:  .....F######F......
+      r15:  .....FFFFFFFF......
+      r16:  .......~~~~........
+      r17:  .......~~~~........
+      r18:  ..C....~~~~....M...
+      r19:  .......~~~~........
+      r20:  .......~~~~..S.....
+      r21:  ..T..........T.....
+      r22:  ..T..........T.....
+      r23:  ..T..........T.....
+      r24:  ....................
+      r25:  ....................
+      r26:  ....................
+      r27:  ....................
+      ```
+    - **Free tier**: tilled plots cover center 3x3 of the fenced area (rows 10-12, cols 6-8)
+    - **Paid tier**: tilled plots cover full 5x5 fenced area (rows 10-14, cols 6-10)
+    - **Do NOT place interactive objects in the tilemap** — leave those tiles as grass. They are rendered as separate sprites in code:
+    - Interactive objects (tapped by user to open panels):
+      - Chest (C) -> seed inventory
+      - Greenhouse building (G) -> plant storage panel
+      - Mailbox (M) -> notifications
+      - Sign (S) -> settings/profile
+    - Export free tier as `assets/tiles/garden-map-free.json`, paid tier as `assets/tiles/garden-map-paid.json`
+    - _Requirements: 5.1, 5.2, 5.3_
 
 - [x] 10. Implement sync service and offline support
   - [x] 10.1 Implement SyncService
@@ -345,8 +396,8 @@ This plan implements the Thought Garden journaling app using React Native + Expo
 - [x] 11. Checkpoint - Backend services complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement state management and UI screens
-  - [ ] 12.1 Implement Zustand stores
+- [x] 12. Implement state management and UI screens
+  - [x] 12.1 Implement Zustand stores
     - Create `src/stores/auth-store.ts` for authentication state
     - Create `src/stores/entry-store.ts` for journal entry state and operations
     - Create `src/stores/garden-store.ts` for garden, plants, and greenhouse state
@@ -355,14 +406,14 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Wire stores to WatermelonDB reactive subscriptions
     - _Requirements: All (state layer)_
 
-  - [ ] 12.2 Implement navigation and screen structure
+  - [x] 12.2 Implement navigation and screen structure
     - Set up Expo Router file-based routing in `app/` (refer to https://docs.expo.dev/versions/v56.0.0/ for current API)
     - Create auth screens: Login, Register
     - Create main tab navigation: Journal, Garden, Greenhouse, Profile
     - Implement auth guard (redirect to login if no session)
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 12.3 Implement journal entry screens
+  - [x] 12.3 Implement journal entry screens
     - Create entry creation screen with text input (10,000 char limit), emotion picker (primary + secondary)
     - Create entry list screen with entries sorted by date
     - Create entry detail/edit screen with same validation rules
@@ -370,15 +421,23 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Display daily limit message for free-tier users
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 3.1, 3.2, 3.3_
 
-  - [ ] 12.4 Implement garden screen
-    - Create garden grid view (3x3 free / 5x5 paid) styled as tilled earth using Sprout Lands tileset
-    - Implement seed planting: select seed from inventory, tap empty plot
+  - [x] 12.4 Implement garden screen
+    - Render the garden world map as the main screen (no traditional tab bar)
+    - Load `assets/tiles/garden-map-free.json` or `assets/tiles/garden-map-paid.json` based on user tier
+    - Render tilemap as a grid of expo-image tiles at 2x scale (16x16 native -> 32x32 rendered, nearest-neighbor)
+    - Overlay the plot grid on the tilemap center: 3x3 (free) or 5x5 (paid)
+    - Display plants at current growth stage via PlantVisualService (seed stage uses shared seed.png, sprout/full/bloom use per-plant sprite sheet frames 0/1/2)
+    - Implement seed planting: tap empty plot opens seed selection from inventory
     - Implement plant drag-and-drop movement between plots
-    - Display plants at current growth stage with correct species/color visuals via `PlantVisualService`
-    - Show "no empty plots" message when garden is full
+    - Show 'no empty plots' message when garden is full
+    - **Interactive sprite objects** (rendered as sprites over the tilemap at fixed tile coordinates, NOT in the tilemap):
+      - **Chest** (static sprite) -> tap opens seed inventory panel
+      - **Mailbox** (animated sprite, `Mailbox Animation Frames.png`) -> idle frame when notification-store is empty, animated flag frames when unread notifications exist; tap opens notifications panel
+      - **Greenhouse building** (static sprite) -> tap opens greenhouse panel
+      - **Sign** (static tile in tilemap) -> tap opens settings/profile panel
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8_
 
-  - [ ] 12.5 Implement greenhouse screen
+  - [x] 12.5 Implement greenhouse screen
     - Create greenhouse view showing stored plants with growth stage
     - Implement move-to-greenhouse from garden
     - Implement move-from-greenhouse to garden (select empty plot)
@@ -386,14 +445,14 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Display capacity messages and full-greenhouse options
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-  - [ ] 12.6 Implement achievement notifications
+  - [x] 12.6 Implement achievement notifications
     - Create notification component for achievement/seed awards
     - Display achievement name and seed emotion type on trigger
     - Handle multiple simultaneous achievement notifications (queue display)
     - _Requirements: 4.3, 4.4_
 
-- [ ] 13. Wire entry submission to achievement evaluation and watering
-  - [ ] 13.1 Integrate entry creation with achievement engine and garden watering
+- [x] 13. Wire entry submission to achievement evaluation and watering
+  - [x] 13.1 Integrate entry creation with achievement engine and garden watering
     - Wire `createEntry` to trigger `achievementEngine.evaluateEntry` after successful save
     - Wire `createEntry` to trigger `gardenService.waterGarden` after successful save
     - Ensure all operations happen in a single WatermelonDB batch write (atomic)
@@ -401,7 +460,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Update user stats (total entries, streak, last entry date) atomically
     - _Requirements: 4.1, 4.4, 6.1, 6.2_
 
-  - [ ]* 13.2 Write integration tests for full journaling flow
+  - [x] 13.2 Write integration tests for full journaling flow
     - Test: create entry → earn achievement → get seed → plant → water → grow
     - Test: offline entry creation → sync when online
     - Test: auth flow → session persistence → sign out → data cleanup
@@ -433,12 +492,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
 ```json
 {
   "waves": [
-    { "id": 0, "tasks": ["10.6"] },
-    { "id": 1, "tasks": ["12.1"] },
-    { "id": 2, "tasks": ["12.2", "12.3", "12.4", "12.5", "12.6"] },
-    { "id": 3, "tasks": ["13.1"] },
-    { "id": 4, "tasks": ["13.2"] },
-    { "id": 5, "tasks": ["14.1"] }
+    { "id": 0, "tasks": ["14.1"] }
   ]
 }
 ```
