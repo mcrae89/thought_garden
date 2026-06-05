@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, Modal, StyleSheet, Text } from 'react-native';
+import { View, ScrollView, useWindowDimensions, TouchableOpacity, Modal, StyleSheet, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGardenStore } from '@/stores/garden-store';
@@ -26,12 +26,10 @@ const FREE_MAP: TiledMap = require('../../assets/tiles/garden-map-free.json');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PAID_MAP: TiledMap = require('../../assets/tiles/garden-map-paid.json');
 
-const TILE_SIZE = 32;
-const CHEST_TILE = { col: 2, row: 6 };
+const CHEST_TILE = { col: 4, row: 9 };
 const MAILBOX_TILE = { col: 15, row: 9 };
 
-/** Parse all non-zero tile positions from the 'soil' layer as plot slots. */
-function getSoilPlots(map: TiledMap): Array<{ plotIndex: number; left: number; top: number }> {
+function getSoilPlots(map: TiledMap, tileSize: number) {
   const soilLayer = map.layers.find((l) => l.name === 'soil' && l.type === 'tilelayer');
   if (!soilLayer) return [];
   const plots: Array<{ plotIndex: number; left: number; top: number }> = [];
@@ -40,7 +38,7 @@ function getSoilPlots(map: TiledMap): Array<{ plotIndex: number; left: number; t
     if (soilLayer.data[i] !== 0) {
       const col = i % soilLayer.width;
       const row = Math.floor(i / soilLayer.width);
-      plots.push({ plotIndex: plotIndex++, left: col * TILE_SIZE, top: row * TILE_SIZE });
+      plots.push({ plotIndex: plotIndex++, left: col * tileSize, top: row * tileSize });
     }
   }
   return plots;
@@ -60,9 +58,11 @@ export default function GardenWorldScreen() {
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
 
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const userId = session?.userId ?? '';
   const mapData = tier === 'free' ? FREE_MAP : PAID_MAP;
-  const soilPlots = useMemo(() => getSoilPlots(mapData), [mapData]);
+  const tileSize = Math.floor(Math.min(screenWidth / mapData.width, screenHeight / mapData.height));
+  const soilPlots = useMemo(() => getSoilPlots(mapData, tileSize), [mapData, tileSize]);
 
   useGardenSubscription(userId);
   useEntrySubscription();
@@ -89,51 +89,48 @@ export default function GardenWorldScreen() {
   }, [clearAll]);
 
   return (
-    <View style={styles.container}>
-      <ScrollView horizontal contentContainerStyle={styles.mapContainer}>
-        <ScrollView contentContainerStyle={styles.mapContent}>
-          <View style={{ position: 'relative' }}>
-            <TilemapRenderer mapData={mapData} tileSize={TILE_SIZE} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'relative' }}>
+      <View style={{ position: 'relative' }}>
+        <TilemapRenderer mapData={mapData} tileSize={tileSize} />
 
-            {/* Touch targets over every dirt tile — positioned from map data */}
-            {soilPlots.map(({ plotIndex, left, top }) => {
-              const plant = gardenPlants.find((p) => p.plotPosition === plotIndex);
-              return (
-                <TouchableOpacity
-                  key={plotIndex}
-                  style={[styles.plot, { left, top }]}
-                  onPress={() => handlePlotPress(plotIndex)}
-                  accessibilityLabel={plant ? `Plant plot ${plotIndex}, occupied` : `Empty plot ${plotIndex}`}
-                >
-                  {plant ? <PlantSprite plant={plant} /> : null}
-                </TouchableOpacity>
-              );
-            })}
-
+        {soilPlots.map(({ plotIndex, left, top }) => {
+          const plant = gardenPlants.find((p) => p.plotPosition === plotIndex);
+          return (
             <TouchableOpacity
-              style={[styles.spriteOverlay, { left: CHEST_TILE.col * TILE_SIZE, top: CHEST_TILE.row * TILE_SIZE }]}
-              onPress={() => setActiveModal('seeds')}
-              accessibilityLabel="Open seed chest"
+              key={plotIndex}
+              style={{ position: 'absolute', left, top, width: tileSize, height: tileSize, alignItems: 'center', justifyContent: 'center' }}
+              onPress={() => handlePlotPress(plotIndex)}
+              accessibilityLabel={plant ? `Plant plot ${plotIndex}, occupied` : `Empty plot ${plotIndex}`}
             >
-              <View style={[styles.spriteBox, { backgroundColor: colors.primaryDark }]} />
+              {plant ? <PlantSprite plant={plant} /> : null}
             </TouchableOpacity>
+          );
+        })}
 
-            <TouchableOpacity
-              style={[styles.spriteOverlay, { left: MAILBOX_TILE.col * TILE_SIZE, top: MAILBOX_TILE.row * TILE_SIZE }]}
-              onPress={handleMailboxPress}
-              accessibilityLabel={hasUnread ? 'Mailbox with new notifications' : 'Mailbox'}
-            >
-              <Image
-                source={require('../../assets/tiles/sprout-lands/structures/Mailbox Animation Frames.png')}
-                style={styles.spriteBox}
-                contentFit="none"
-                accessibilityLabel="Mailbox"
-              />
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </ScrollView>
+        <TouchableOpacity
+          style={{ position: 'absolute', left: CHEST_TILE.col * tileSize, top: CHEST_TILE.row * tileSize, width: tileSize * 3, height: tileSize * 3, zIndex: 10 }}
+          onPress={() => setActiveModal('seeds')}
+          accessibilityLabel="Open seed chest"
+        >
+          <Image source={require("../../assets/sprites/ui/chest.png")} style={{ width: tileSize * 3, height: tileSize * 3 }} contentFit="fill" />
+        </TouchableOpacity>
 
+        <TouchableOpacity
+          style={{ position: 'absolute', left: MAILBOX_TILE.col * tileSize, top: MAILBOX_TILE.row * tileSize, width: tileSize, height: tileSize, zIndex: 10 }}
+          onPress={handleMailboxPress}
+          accessibilityLabel={hasUnread ? 'Mailbox with new notifications' : 'Mailbox'}
+        >
+          <Image
+            source={require('../../assets/tiles/sprout-lands/structures/Mailbox Animation Frames.png')}
+            style={{ width: tileSize, height: tileSize }}
+            contentFit="none"
+            accessibilityLabel="Mailbox"
+          />
+        </TouchableOpacity>
+      </View>
+
+        </View>
       <View style={styles.hud}>
         <TouchableOpacity style={styles.hudButton} onPress={() => setActiveModal('greenhouse')} accessibilityLabel="Open greenhouse">
           <Text style={styles.hudButtonText}>🌿</Text>
@@ -172,12 +169,8 @@ export default function GardenWorldScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  mapContainer: { flexGrow: 1 },
-  mapContent: { flexGrow: 1 },
-  plot: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE, alignItems: 'center', justifyContent: 'center' },
-  spriteOverlay: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
-  spriteBox: { width: TILE_SIZE, height: TILE_SIZE },
   hud: { position: 'absolute', bottom: spacing.lg, right: spacing.lg, gap: spacing.sm },
   hudButton: { width: 48, height: 48, backgroundColor: colors.surface, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
   hudButtonText: { fontSize: 24 },
 });
+

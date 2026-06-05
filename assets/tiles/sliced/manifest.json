@@ -1,0 +1,62 @@
+{
+  "1": {
+    "name": "grass_hills",
+    "tileCount": 77,
+    "tilesDir": "assets/tiles/sliced/grass_hills"
+  },
+  "78": {
+    "name": "soil_hills",
+    "tileCount": 77,
+    "tilesDir": "assets/tiles/sliced/soil_hills"
+  },
+  "155": {
+    "name": "house_walls",
+    "tileCount": 15,
+    "tilesDir": "assets/tiles/sliced/house_walls"
+  },
+  "170": {
+    "name": "house_roof",
+    "tileCount": 35,
+    "tilesDir": "assets/tiles/sliced/house_roof"
+  },
+  "205": {
+    "name": "door_anim",
+    "tileCount": 36,
+    "tilesDir": "assets/tiles/sliced/door_anim"
+  },
+  "241": {
+    "name": "fences",
+    "tileCount": 32,
+    "tilesDir": "assets/tiles/sliced/fences"
+  },
+  "273": {
+    "name": "fence_gates",
+    "tileCount": 30,
+    "tilesDir": "assets/tiles/sliced/fence_gates"
+  },
+  "303": {
+    "name": "paths",
+    "tileCount": 16,
+    "tilesDir": "assets/tiles/sliced/paths"
+  },
+  "319": {
+    "name": "trees",
+    "tileCount": 84,
+    "tilesDir": "assets/tiles/sliced/trees"
+  },
+  "403": {
+    "name": "water_well",
+    "tileCount": 4,
+    "tilesDir": "assets/tiles/sliced/water_well"
+  },
+  "407": {
+    "name": "mushrooms",
+    "tileCount": 60,
+    "tilesDir": "assets/tiles/sliced/mushrooms"
+  },
+  "467": {
+    "name": "signs",
+    "tileCount": 16,
+    "tilesDir": "assets/tiles/sliced/signs"
+  }
+}
