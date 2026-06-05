@@ -1,12 +1,27 @@
-import { Q } from '@nozbe/watermelondb';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { database } from '@/database';
-import { Entry as EntryModel } from '@/database/models/entry.model';
-import { EntryEmotion as EntryEmotionModel } from '@/database/models/entry-emotion.model';
+import { db } from '@/database';
+import { generateId, now, toDate } from '@/database/helpers';
 import { EMOTIONS, type Emotion, type Tier } from '@/shared/types';
 import type { AppError, Result } from '@/shared/result';
 import type { Entry, EntryService } from './index';
+
+interface EntryRow {
+  id: string;
+  user_id: string;
+  content: string;
+  primary_emotion: string;
+  word_count: number;
+  created_at: number;
+  modified_at: number | null;
+  is_deleted: number;
+}
+
+interface EntryEmotionRow {
+  id: string;
+  entry_id: string;
+  emotion: string;
+  type: string;
+  order: number;
+}
 
 export function validateEntryContent(content: string): Result<string> {
   const trimmed = content.trim();
@@ -38,25 +53,24 @@ export function checkDailyLimit(tier: Tier, existingTodayCount: number): Result<
   return { success: true, data: undefined };
 }
 
-export function mapToEntry(model: EntryModel, secondaryEmotions: readonly Emotion[] = []): Entry {
+export function mapToEntry(row: EntryRow, secondaryEmotions: readonly Emotion[] = []): Entry {
   return {
-    id: model.id,
-    userId: model.userId,
-    content: model.content,
-    primaryEmotion: model.primaryEmotion as Emotion,
+    id: row.id,
+    userId: row.user_id,
+    content: row.content,
+    primaryEmotion: row.primary_emotion as Emotion,
     secondaryEmotions,
-    wordCount: model.wordCount,
-    createdAt: model.createdAt,
-    modifiedAt: model.modifiedAt,
-    isDeleted: model.isDeleted,
+    wordCount: row.word_count,
+    createdAt: toDate(row.created_at)!,
+    modifiedAt: toDate(row.modified_at),
+    isDeleted: row.is_deleted === 1,
   };
 }
 
 function getTodayBounds(): { start: number; end: number } {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const end = start + 86_400_000;
-  return { start, end };
+  const d = new Date();
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return { start, end: start + 86_400_000 };
 }
 
 function computeWordCount(content: string): number {
@@ -73,54 +87,46 @@ class EntryServiceImpl implements EntryService {
 
     if (tier === 'free') {
       const { start, end } = getTodayBounds();
-      const todayCount = await database.get<EntryModel>('entries')
-        .query(
-          Q.where('user_id', userId),
-          Q.where('is_deleted', false),
-          Q.where('created_at', Q.gte(start)),
-          Q.where('created_at', Q.lt(end)),
-        )
-        .fetchCount();
-      const limitResult = checkDailyLimit(tier, todayCount);
+      const row = db.getFirstSync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM entries WHERE user_id = ? AND is_deleted = 0 AND created_at >= ? AND created_at < ?',
+        [userId, start, end],
+      );
+      const limitResult = checkDailyLimit(tier, row?.count ?? 0);
       if (!limitResult.success) throw limitResult.error;
     }
 
     const wordCount = computeWordCount(content);
-    let createdEntry: EntryModel | undefined;
+    const entryId = generateId();
+    const createdAt = now();
 
-    await database.write(async () => {
-      const entries = database.get<EntryModel>('entries');
-      const entryEmotions = database.get<EntryEmotionModel>('entry_emotions');
-
-      const newEntry = entries.prepareCreate((e) => {
-        e.userId = userId;
-        e.content = content;
-        e.primaryEmotion = primaryEmotion;
-        e.wordCount = wordCount;
-        e.isDeleted = false;
-      });
-
-      const primaryRecord = entryEmotions.prepareCreate((em) => {
-        em.entryId = newEntry.id;
-        em.emotion = primaryEmotion;
-        em.type = 'primary';
-        em.order = 0;
-      });
-
-      const secondaryRecords = secondaryEmotions.map((emotion, index) =>
-        entryEmotions.prepareCreate((em) => {
-          em.entryId = newEntry.id;
-          em.emotion = emotion;
-          em.type = 'secondary';
-          em.order = index + 1;
-        }),
+    db.withTransactionSync(() => {
+      db.runSync(
+        'INSERT INTO entries (id, user_id, content, primary_emotion, word_count, created_at, is_deleted) VALUES (?, ?, ?, ?, ?, ?, 0)',
+        [entryId, userId, content, primaryEmotion, wordCount, createdAt],
       );
-
-      await database.batch(newEntry, primaryRecord, ...secondaryRecords);
-      createdEntry = newEntry;
+      db.runSync(
+        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
+        [generateId(), entryId, primaryEmotion, 'primary', 0],
+      );
+      secondaryEmotions.forEach((emotion, i) => {
+        db.runSync(
+          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
+          [generateId(), entryId, emotion, 'secondary', i + 1],
+        );
+      });
     });
 
-    return mapToEntry(createdEntry!, secondaryEmotions);
+    return {
+      id: entryId,
+      userId,
+      content,
+      primaryEmotion,
+      secondaryEmotions,
+      wordCount,
+      createdAt: toDate(createdAt)!,
+      modifiedAt: null,
+      isDeleted: false,
+    };
   }
 
   async editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, _tier: Tier): Promise<Entry> {
@@ -130,101 +136,89 @@ class EntryServiceImpl implements EntryService {
     const emotionsResult = validateEmotions(primaryEmotion, secondaryEmotions);
     if (!emotionsResult.success) throw emotionsResult.error;
 
-    const entry = await database.get<EntryModel>('entries').find(id);
+    const entry = db.getFirstSync<EntryRow>('SELECT * FROM entries WHERE id = ?', [id]);
     const notFoundError: AppError = { type: 'validation', field: 'id', message: 'Entry not found' };
-    if (entry.userId !== userId) throw notFoundError;
-    if (entry.isDeleted) throw notFoundError;
+    if (!entry || entry.user_id !== userId || entry.is_deleted === 1) throw notFoundError;
 
     const wordCount = computeWordCount(content);
+    const modifiedAt = now();
 
-    await database.write(async () => {
-      const existingEmotions = await entry.emotions.fetch();
-      const deletions = existingEmotions.map(em => em.prepareDestroyPermanently());
-
-      const entryEmotions = database.get<EntryEmotionModel>('entry_emotions');
-      const primaryRecord = entryEmotions.prepareCreate((em) => {
-        em.entryId = entry.id;
-        em.emotion = primaryEmotion;
-        em.type = 'primary';
-        em.order = 0;
-      });
-      const secondaryRecords = secondaryEmotions.map((emotion, index) =>
-        entryEmotions.prepareCreate((em) => {
-          em.entryId = entry.id;
-          em.emotion = emotion;
-          em.type = 'secondary';
-          em.order = index + 1;
-        }),
+    db.withTransactionSync(() => {
+      db.runSync(
+        'UPDATE entries SET content = ?, primary_emotion = ?, word_count = ?, modified_at = ? WHERE id = ?',
+        [content, primaryEmotion, wordCount, modifiedAt, id],
       );
-
-      const updatedEntry = entry.prepareUpdate((e) => {
-        e.content = content;
-        e.primaryEmotion = primaryEmotion;
-        e.wordCount = wordCount;
-        e.modifiedAt = new Date();
+      db.runSync('DELETE FROM entry_emotions WHERE entry_id = ?', [id]);
+      db.runSync(
+        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
+        [generateId(), id, primaryEmotion, 'primary', 0],
+      );
+      secondaryEmotions.forEach((emotion, i) => {
+        db.runSync(
+          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
+          [generateId(), id, emotion, 'secondary', i + 1],
+        );
       });
-
-      await database.batch(updatedEntry, ...deletions, primaryRecord, ...secondaryRecords);
     });
 
-    return mapToEntry(entry, secondaryEmotions);
+    return {
+      id,
+      userId,
+      content,
+      primaryEmotion,
+      secondaryEmotions,
+      wordCount,
+      createdAt: toDate(entry.created_at)!,
+      modifiedAt: toDate(modifiedAt),
+      isDeleted: false,
+    };
   }
 
   async deleteEntry(id: string, userId: string): Promise<void> {
-    const entry = await database.get<EntryModel>('entries').find(id);
+    const entry = db.getFirstSync<EntryRow>('SELECT * FROM entries WHERE id = ?', [id]);
     const notFoundError: AppError = { type: 'validation', field: 'id', message: 'Entry not found' };
-    if (entry.userId !== userId) throw notFoundError;
-    if (entry.isDeleted) throw notFoundError;
+    if (!entry || entry.user_id !== userId || entry.is_deleted === 1) throw notFoundError;
 
-    await database.write(async () => {
-      await entry.update((e) => {
-        e.isDeleted = true;
-      });
-    });
+    db.runSync('UPDATE entries SET is_deleted = 1 WHERE id = ?', [id]);
   }
 
-  getEntries(options: { limit?: number; offset?: number; date?: string }): Observable<Entry[]> {
-    let query = database.get<EntryModel>('entries').query(
-      Q.where('is_deleted', false),
-      Q.sortBy('created_at', Q.desc),
-    );
+  async getEntries(options: { limit?: number; offset?: number; date?: string }): Promise<Entry[]> {
+    let sql = 'SELECT * FROM entries WHERE is_deleted = 0';
+    const params: (string | number)[] = [];
 
     if (options.date) {
       const dayStart = new Date(options.date).getTime();
-      const dayEnd = dayStart + 86_400_000;
-      query = query.extend(
-        Q.where('created_at', Q.gte(dayStart)),
-        Q.where('created_at', Q.lt(dayEnd)),
-      );
-    }
-    if (options.limit !== undefined) {
-      query = query.extend(Q.take(options.limit));
-    }
-    if (options.offset !== undefined) {
-      query = query.extend(Q.skip(options.offset));
+      sql += ' AND created_at >= ? AND created_at < ?';
+      params.push(dayStart, dayStart + 86_400_000);
     }
 
-    return (query.observe() as Observable<EntryModel[]>).pipe(
-      map(entries => entries.map(e => mapToEntry(e))),
-    );
+    sql += ' ORDER BY created_at DESC';
+
+    if (options.limit !== undefined) {
+      sql += ' LIMIT ?';
+      params.push(options.limit);
+    }
+    if (options.offset !== undefined) {
+      sql += ' OFFSET ?';
+      params.push(options.offset);
+    }
+
+    const rows = db.getAllSync<EntryRow>(sql, params);
+    return rows.map(row => mapToEntry(row));
   }
 
   async getEntryCount(): Promise<number> {
-    return database.get<EntryModel>('entries')
-      .query(Q.where('is_deleted', false))
-      .fetchCount();
+    const row = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM entries WHERE is_deleted = 0');
+    return row?.count ?? 0;
   }
 
   async getDailyEntryCount(date: string): Promise<number> {
     const dayStart = new Date(date).getTime();
-    const dayEnd = dayStart + 86_400_000;
-    return database.get<EntryModel>('entries')
-      .query(
-        Q.where('is_deleted', false),
-        Q.where('created_at', Q.gte(dayStart)),
-        Q.where('created_at', Q.lt(dayEnd)),
-      )
-      .fetchCount();
+    const row = db.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM entries WHERE is_deleted = 0 AND created_at >= ? AND created_at < ?',
+      [dayStart, dayStart + 86_400_000],
+    );
+    return row?.count ?? 0;
   }
 }
 

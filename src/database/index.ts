@@ -1,28 +1,67 @@
-import { Database } from '@nozbe/watermelondb';
-import { Platform } from 'react-native';
-import { schema } from './schema';
-import { migrations } from './migrations';
-import { Entry } from './models/entry.model';
-import { EntryEmotion } from './models/entry-emotion.model';
-import { Seed } from './models/seed.model';
-import { Plant } from './models/plant.model';
-import { AchievementRecord } from './models/achievement-record.model';
-import { UserStats } from './models/user-stats.model';
+import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 
-const modelClasses = [Entry, EntryEmotion, Seed, Plant, AchievementRecord, UserStats];
+const db: SQLiteDatabase = openDatabaseSync('thought_garden.db');
 
-function createAdapter() {
-  if (Platform.OS === 'web') {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { LokiJSAdapter } = require('@nozbe/watermelondb/adapters/lokijs');
-    return new LokiJSAdapter({ schema, migrations, useWebWorker: false, useIncrementalIndexedDB: true });
-  }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { SQLiteAdapter } = require('@nozbe/watermelondb/adapters/sqlite');
-  return new SQLiteAdapter({ schema, migrations });
-}
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS entries (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    primary_emotion TEXT NOT NULL,
+    word_count INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    modified_at INTEGER,
+    is_deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS entry_emotions (
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL,
+    emotion TEXT NOT NULL,
+    type TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS seeds (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    source_entry_id TEXT,
+    source_achievement_id TEXT NOT NULL,
+    emotion TEXT NOT NULL,
+    color_variation TEXT,
+    earned_at INTEGER NOT NULL,
+    is_planted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS plants (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    seed_id TEXT NOT NULL,
+    emotion TEXT NOT NULL,
+    color_variation TEXT,
+    growth_stage TEXT NOT NULL DEFAULT 'seed',
+    location TEXT NOT NULL DEFAULT 'garden',
+    plot_position INTEGER,
+    planted_at INTEGER NOT NULL,
+    last_watered_at INTEGER,
+    last_growth_date TEXT
+  );
+  CREATE TABLE IF NOT EXISTS achievement_records (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    achievement_type TEXT NOT NULL,
+    achievement_key TEXT NOT NULL,
+    trigger_entry_id TEXT,
+    earned_at INTEGER NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE TABLE IF NOT EXISTS user_stats (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE,
+    total_entries INTEGER NOT NULL DEFAULT 0,
+    current_streak INTEGER NOT NULL DEFAULT 0,
+    last_entry_date TEXT,
+    consecutive_same_emotion INTEGER NOT NULL DEFAULT 0,
+    last_emotion TEXT,
+    tier TEXT NOT NULL DEFAULT 'free'
+  );
+`);
 
-export const database = new Database({
-  adapter: createAdapter(),
-  modelClasses,
-});
+export { db };

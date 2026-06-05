@@ -21,6 +21,7 @@ export interface AuthResult {
 export interface AuthService {
   signInWithEmail(email: string, password: string): Promise<AuthResult>;
   signInWithOAuth(provider: OAuthProvider): Promise<AuthResult>;
+  signUp(email: string, password: string): Promise<AuthResult>;
   signOut(): Promise<void>;
   getSession(): Promise<Session | null>;
   onAuthStateChange(callback: (session: Session | null) => void): Unsubscribe;

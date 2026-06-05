@@ -121,6 +121,15 @@ class AuthServiceImpl implements AuthService {
     return { success: true, session };
   }
 
+  async signUp(email: string, password: string): Promise<AuthResult> {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { success: false, error: mapSupabaseError(error.message) };
+    if (!data.session) return { success: true };
+    const session = toSession(data.session);
+    await persistSession(session);
+    return { success: true, session };
+  }
+
   async signInWithOAuth(provider: OAuthProvider): Promise<AuthResult> {
     const locked = await checkLocked();
     if (locked) return locked;

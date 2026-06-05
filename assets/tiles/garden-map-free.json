@@ -245,54 +245,55 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Grass_Hills_Tiles_v2.tsx"
+         "source":"Darker_Grass_Hills_Tiles_v2.tsx"
         }, 
         {
          "firstgid":78,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Soil_Ground_Hills_Tiles.tsx"
+         "source":"Darker_Soil_Ground_Hills_Tiles.tsx"
         }, 
         {
          "firstgid":155,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Walls_Tilset.tsx"
+         "source":"Wooden_House_Walls_Tilset.tsx"
         }, 
         {
          "firstgid":170,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Roof_Tilset.tsx"
+         "source":"Wooden_House_Roof_Tilset.tsx"
         }, 
         {
          "firstgid":205,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/door animation sprites.tsx"
+         "source":"door animation sprites.tsx"
         }, 
         {
          "firstgid":241,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Fences.tsx"
+         "source":"Fences.tsx"
         }, 
         {
          "firstgid":273,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Fence gates animation sprites.tsx"
+         "source":"Fence gates animation sprites.tsx"
         }, 
         {
          "firstgid":303,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Paths.tsx"
+         "source":"Paths.tsx"
         }, 
         {
          "firstgid":319,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Trees, stumps and bushes.tsx"
+         "source":"Trees, stumps and bushes.tsx"
         }, 
         {
          "firstgid":403,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Water well.tsx"
+         "source":"Water well.tsx"
         }, 
         {
          "firstgid":407,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Mushrooms, Flowers, Stones.tsx"
+         "source":"Mushrooms, Flowers, Stones.tsx"
         }, 
         {
          "firstgid":467,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/signs_sides.tsx"
+         "source":"signs_sides.tsx"
         }],
  "tilewidth":16,
  "type":"map",
  "version":"1.10",
  "width":20
 }
+

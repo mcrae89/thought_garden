@@ -1,14 +1,39 @@
-import { Q } from '@nozbe/watermelondb';
-import { database } from '@/database';
-import { AchievementRecord } from '@/database/models/achievement-record.model';
-import { Seed } from '@/database/models/seed.model';
-import { UserStats } from '@/database/models/user-stats.model';
-import { EntryEmotion as EntryEmotionModel } from '@/database/models/entry-emotion.model';
+import { db } from '@/database';
+import { generateId, now } from '@/database/helpers';
 import type { Emotion } from '@/shared/types';
 import type { Entry } from '@/modules/entries';
 import type { AchievementContext, AchievementEngine, AchievementResult, GardenEvent } from './index';
 
 export type Evaluator = (entry: Entry, context: AchievementContext, earned: Set<string>) => AchievementResult | null;
+
+interface AchievementRow {
+  id: string;
+  user_id: string;
+  achievement_type: string;
+  achievement_key: string;
+  trigger_entry_id: string | null;
+  earned_at: number;
+  is_active: number;
+}
+
+interface UserStatsRow {
+  id: string;
+  user_id: string;
+  total_entries: number;
+  current_streak: number;
+  last_entry_date: string | null;
+  consecutive_same_emotion: number;
+  last_emotion: string | null;
+  tier: string;
+}
+
+interface EntryEmotionRow {
+  id: string;
+  entry_id: string;
+  emotion: string;
+  type: string;
+  order: number;
+}
 
 export function resolveTie(emotionCounts: Map<Emotion, number>, emotionLastUsed: Map<Emotion, Date>): Emotion {
   let best: Emotion | null = null;
@@ -78,7 +103,7 @@ export const firstSecondaryEmotion: Evaluator = (entry, context, earned) => {
   return { achievementKey: 'first_secondary_emotion', achievementType: 'milestone', seedEmotion: entry.primaryEmotion };
 };
 
-// --- Time-based evaluators (Task 5.3) ---
+// --- Time-based evaluators ---
 
 export const morningEntry: Evaluator = (entry, context, earned) => {
   if (earned.has('time:morning')) return null;
@@ -101,7 +126,7 @@ export const weekendEntry: Evaluator = (entry, context, earned) => {
   return { achievementKey: 'time:weekend', achievementType: 'time', seedEmotion: entry.primaryEmotion };
 };
 
-// --- Repeatable evaluators (Task 5.4) ---
+// --- Repeatable evaluators ---
 
 export const streakEvaluator: Evaluator = (entry, context, earned) => {
   const thresholds = [3, 7, 14, 30] as const;
@@ -155,26 +180,22 @@ const evaluators: Evaluator[] = [
 // --- Context builder ---
 
 export async function buildAchievementContext(userId: string, _currentEntry: Entry): Promise<AchievementContext> {
-  const achievementRecords = await database.get<AchievementRecord>('achievement_records')
-    .query(Q.where('user_id', userId))
-    .fetch();
+  const achievementRecords = db.getAllSync<AchievementRow>(
+    'SELECT * FROM achievement_records WHERE user_id = ?', [userId],
+  );
+  const earnedKeys = new Set(achievementRecords.map(r => r.achievement_key));
 
-  const earnedKeys = new Set(achievementRecords.map(r => r.achievementKey));
+  const stats = db.getFirstSync<UserStatsRow>('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
 
-  const statsRecords = await database.get<UserStats>('user_stats')
-    .query(Q.where('user_id', userId))
-    .fetch();
-  const stats = statsRecords[0];
+  const totalEntryCount = stats?.total_entries ?? 0;
+  const currentStreak = stats?.current_streak ?? 0;
+  const lastEntryDate = stats?.last_entry_date ?? null;
+  const consecutiveSameEmotionCount = stats?.consecutive_same_emotion ?? 0;
+  const lastConsecutiveEmotion = (stats?.last_emotion as Emotion) ?? null;
 
-  const totalEntryCount = stats?.totalEntries ?? 0;
-  const currentStreak = stats?.currentStreak ?? 0;
-  const lastEntryDate = stats?.lastEntryDate ?? null;
-  const consecutiveSameEmotionCount = stats?.consecutiveSameEmotion ?? 0;
-  const lastConsecutiveEmotion = (stats?.lastEmotion as Emotion) ?? null;
-
-  const allEntryEmotions = await database.get<EntryEmotionModel>('entry_emotions')
-    .query(Q.where('type', 'primary'))
-    .fetch();
+  const allEntryEmotions = db.getAllSync<EntryEmotionRow>(
+    'SELECT * FROM entry_emotions WHERE type = ?', ['primary'],
+  );
 
   const emotionUsageCounts = new Map<Emotion, number>();
   const lifetimeEmotionCounts = new Map<Emotion, number>();
@@ -219,10 +240,10 @@ const GARDEN_EVENT_KEYS: Record<GardenEvent['type'], string> = {
 
 class AchievementEngineImpl implements AchievementEngine {
   async evaluateEntry(entry: Entry, context: AchievementContext): Promise<AchievementResult[]> {
-    const records = await database.get<AchievementRecord>('achievement_records')
-      .query(Q.where('user_id', entry.userId), Q.where('is_active', true))
-      .fetch();
-    const earned = new Set(records.map(r => r.achievementKey));
+    const records = db.getAllSync<AchievementRow>(
+      'SELECT * FROM achievement_records WHERE user_id = ? AND is_active = 1', [entry.userId],
+    );
+    const earned = new Set(records.map(r => r.achievement_key));
 
     const results: AchievementResult[] = [];
     for (const evaluator of evaluators) {
@@ -231,26 +252,20 @@ class AchievementEngineImpl implements AchievementEngine {
     }
 
     if (results.length > 0) {
-      await database.write(async () => {
-        const ops = results.flatMap(result => {
-          const achievementRecord = database.get<AchievementRecord>('achievement_records').prepareCreate((r) => {
-            r.userId = entry.userId;
-            r.achievementType = result.achievementType;
-            r.achievementKey = result.achievementKey;
-            r.triggerEntryId = entry.id;
-            r.isActive = true;
-          });
-          const seed = database.get<Seed>('seeds').prepareCreate((s) => {
-            s.userId = entry.userId;
-            s.sourceEntryId = entry.id;
-            s.sourceAchievementId = achievementRecord.id;
-            s.emotion = result.seedEmotion;
-            s.colorVariation = null;
-            s.isPlanted = false;
-          });
-          return [achievementRecord, seed];
-        });
-        await database.batch(...ops);
+      db.withTransactionSync(() => {
+        for (const result of results) {
+          const achievementId = generateId();
+          const seedId = generateId();
+          const earnedAt = now();
+          db.runSync(
+            'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)',
+            [achievementId, entry.userId, result.achievementType, result.achievementKey, entry.id, earnedAt],
+          );
+          db.runSync(
+            'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, ?, ?, ?, NULL, ?, 0)',
+            [seedId, entry.userId, entry.id, achievementId, result.seedEmotion, earnedAt],
+          );
+        }
       });
     }
 
@@ -259,69 +274,56 @@ class AchievementEngineImpl implements AchievementEngine {
 
   async evaluateGardenEvent(event: GardenEvent): Promise<AchievementResult | null> {
     const key = GARDEN_EVENT_KEYS[event.type];
-    const existing = await database.get<AchievementRecord>('achievement_records')
-      .query(Q.where('user_id', event.userId), Q.where('achievement_key', key))
-      .fetch();
+    const existing = db.getFirstSync<AchievementRow>(
+      'SELECT * FROM achievement_records WHERE user_id = ? AND achievement_key = ?', [event.userId, key],
+    );
 
-    if (existing.length > 0) return null;
+    if (existing) return null;
 
     const result: AchievementResult = { achievementKey: key, achievementType: 'garden', seedEmotion: event.seedEmotion };
+    const achievementId = generateId();
+    const seedId = generateId();
+    const earnedAt = now();
 
-    await database.write(async () => {
-      const achievementRecord = database.get<AchievementRecord>('achievement_records').prepareCreate((r) => {
-        r.userId = event.userId;
-        r.achievementType = result.achievementType;
-        r.achievementKey = result.achievementKey;
-        r.triggerEntryId = null;
-        r.isActive = true;
-      });
-      const seed = database.get<Seed>('seeds').prepareCreate((s) => {
-        s.userId = event.userId;
-        s.sourceEntryId = null;
-        s.sourceAchievementId = achievementRecord.id;
-        s.emotion = result.seedEmotion;
-        s.colorVariation = null;
-        s.isPlanted = false;
-      });
-      await database.batch(achievementRecord, seed);
+    db.withTransactionSync(() => {
+      db.runSync(
+        'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active) VALUES (?, ?, ?, ?, NULL, ?, 1)',
+        [achievementId, event.userId, result.achievementType, result.achievementKey, earnedAt],
+      );
+      db.runSync(
+        'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, NULL, ?, ?, NULL, ?, 0)',
+        [seedId, event.userId, achievementId, result.seedEmotion, earnedAt],
+      );
     });
 
     return result;
   }
 
   async getEarnedAchievements(userId: string): Promise<{ key: string; type: string; earnedAt: Date }[]> {
-    const records = await database.get<AchievementRecord>('achievement_records')
-      .query(Q.where('user_id', userId))
-      .fetch();
-    return records.map(r => ({ key: r.achievementKey, type: r.achievementType, earnedAt: r.earnedAt }));
+    const records = db.getAllSync<AchievementRow>(
+      'SELECT * FROM achievement_records WHERE user_id = ?', [userId],
+    );
+    return records.map(r => ({ key: r.achievement_key, type: r.achievement_type, earnedAt: new Date(r.earned_at) }));
   }
 
   async resetStreakIfNeeded(userId: string): Promise<void> {
-    const statsRecords = await database.get<UserStats>('user_stats')
-      .query(Q.where('user_id', userId))
-      .fetch();
-    const stats = statsRecords[0];
+    const stats = db.getFirstSync<UserStatsRow>('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
+    if (!stats?.last_entry_date) return;
 
-    if (!stats?.lastEntryDate) return;
-
-    const gap = calendarDayDiff(stats.lastEntryDate, new Date());
+    const gap = calendarDayDiff(stats.last_entry_date, new Date());
     if (gap < 30) return;
 
-    const activeStreakRecords = await database.get<AchievementRecord>('achievement_records')
-      .query(
-        Q.where('user_id', userId),
-        Q.where('achievement_type', 'streak'),
-        Q.where('is_active', true),
-      )
-      .fetch();
+    const activeStreakRecords = db.getAllSync<AchievementRow>(
+      'SELECT * FROM achievement_records WHERE user_id = ? AND achievement_type = ? AND is_active = 1',
+      [userId, 'streak'],
+    );
 
     if (activeStreakRecords.length === 0) return;
 
-    await database.write(async () => {
-      const ops = activeStreakRecords.map(r => r.prepareUpdate((rec) => {
-        rec.isActive = false;
-      }));
-      await database.batch(...ops);
+    db.withTransactionSync(() => {
+      for (const r of activeStreakRecords) {
+        db.runSync('UPDATE achievement_records SET is_active = 0 WHERE id = ?', [r.id]);
+      }
     });
   }
 }

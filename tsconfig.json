@@ -2,7 +2,6 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -15,10 +14,15 @@
     "types": [
       "jest"
     ],
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "strictPropertyInitialization": false
   },
   "include": [
     "**/*.ts",
     "**/*.tsx"
+  ],
+  "exclude": [
+    "assets/tiles/*.tsx",
+    "node_modules"
   ]
 }

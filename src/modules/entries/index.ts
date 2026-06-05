@@ -1,4 +1,3 @@
-import type { Observable } from 'rxjs';
 import type { Emotion, Tier } from '@/shared/types';
 
 export interface Entry {
@@ -25,7 +24,7 @@ export interface EntryService {
   createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Promise<Entry>;
   editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Promise<Entry>;
   deleteEntry(id: string, userId: string): Promise<void>;
-  getEntries(options: { limit?: number; offset?: number; date?: string }): Observable<Entry[]>;
+  getEntries(options: { limit?: number; offset?: number; date?: string }): Promise<Entry[]>;
   getEntryCount(): Promise<number>;
   getDailyEntryCount(date: string): Promise<number>;
 }

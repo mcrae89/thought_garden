@@ -16,7 +16,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.thought_garden"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -24,18 +25,9 @@
     "plugins": [
       "expo-router",
       "expo-image",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "1.8.10"
-          }
-        }
-      ],
-      "@skam22/watermelondb-expo-plugin",
       "expo-secure-store",
       "expo-web-browser",
-      "react-native-quick-crypto"
+      "expo-sqlite"
     ],
     "scheme": "thought-garden"
   }

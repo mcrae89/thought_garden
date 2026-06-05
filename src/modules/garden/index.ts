@@ -1,4 +1,3 @@
-import type { Observable } from 'rxjs';
 import type { Emotion, GrowthStage, Tier } from '@/shared/types';
 
 export interface Plant {
@@ -27,7 +26,7 @@ export interface WateringResult {
 }
 
 export interface GardenService {
-  getGarden(userId: string): Observable<Plant[]>;
+  getGarden(userId: string): Promise<Plant[]>;
   plantSeed(seedId: string, plotIndex: number, userId: string, tier: Tier): Promise<Plant>;
   movePlant(plantId: string, toPlotIndex: number, userId: string): Promise<void>;
   moveToGreenhouse(plantId: string, userId: string, tier: Tier): Promise<void>;
