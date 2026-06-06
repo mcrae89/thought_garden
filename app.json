@@ -29,6 +29,14 @@
       "expo-web-browser",
       "expo-sqlite"
     ],
-    "scheme": "thought-garden"
+    "scheme": "thought-garden",
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseKey": "",
+      "router": {},
+      "eas": {
+        "projectId": "eecda0f2-407d-424c-a56a-e5b21133f3b3"
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, ScrollView, useWindowDimensions, TouchableOpacity, Modal, StyleSheet, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth-store';
@@ -57,6 +57,32 @@ export default function GardenWorldScreen() {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+  const [chestFrame, setChestFrame] = useState(0);
+  const chestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleChestPress = useCallback(() => {
+    if (chestTimerRef.current) return; // animation already running
+    let frame = 0;
+    const animate = () => {
+      frame++;
+      if (frame >= 4) {
+        setChestFrame(4);
+        chestTimerRef.current = null;
+        setTimeout(() => {
+          setActiveModal('seeds');
+          setChestFrame(0);
+        }, 200);
+      } else {
+        setChestFrame(frame);
+        chestTimerRef.current = setTimeout(animate, 100);
+      }
+    };
+    chestTimerRef.current = setTimeout(animate, 100);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (chestTimerRef.current) clearTimeout(chestTimerRef.current); };
+  }, []);
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const userId = session?.userId ?? '';
@@ -109,11 +135,15 @@ export default function GardenWorldScreen() {
         })}
 
         <TouchableOpacity
-          style={{ position: 'absolute', left: CHEST_TILE.col * tileSize, top: CHEST_TILE.row * tileSize, width: tileSize * 3, height: tileSize * 3, zIndex: 10 }}
-          onPress={() => setActiveModal('seeds')}
+          style={{ position: 'absolute', left: CHEST_TILE.col * tileSize, top: CHEST_TILE.row * tileSize, width: tileSize * 3, height: tileSize * 3, zIndex: 10, overflow: 'hidden' }}
+          onPress={handleChestPress}
           accessibilityLabel="Open seed chest"
         >
-          <Image source={require("../../assets/sprites/ui/chest.png")} style={{ width: tileSize * 3, height: tileSize * 3 }} contentFit="fill" />
+          <Image
+            source={require("../../assets/tiles/sprout-lands/structures/Chest.png")}
+            style={{ width: tileSize * 3 * 5, height: tileSize * 3 * 2, marginLeft: -chestFrame * tileSize * 3 }}
+            contentFit="fill"
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
