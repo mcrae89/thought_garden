@@ -1,26 +1,24 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
+// TODO: Replace with real AES-256-GCM (react-native-quick-crypto) before production.
+// Current implementation is a reversible base64 placeholder — data is NOT encrypted.
+
 export async function deriveEncryptionKey(userId: string): Promise<string> {
   let salt = await SecureStore.getItemAsync('encryption_salt');
   if (!salt) {
     const bytes = Crypto.getRandomBytes(32);
-    const hex = Array.from(bytes, (b: number) => b.toString(16).padStart(2, '0')).join('');
-    salt = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, hex);
+    salt = Array.from(bytes, (b: number) => b.toString(16).padStart(2, '0')).join('');
     await SecureStore.setItemAsync('encryption_salt', salt);
   }
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, userId + salt);
 }
 
-export async function encryptValue(value: string, key: string): Promise<string> {
-  // Placeholder: real encryption requires a SubtleCrypto-compatible runtime.
-  // For now, return a reversible base64 encoding prefixed with the key hash.
-  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, key);
-  return btoa(hash.slice(0, 8) + value);
+export async function encryptValue(value: string, _key: string): Promise<string> {
+  if (!__DEV__) console.warn('[encryption] encryptValue is a placeholder — data is not encrypted');
+  return btoa(value);
 }
 
-export async function decryptValue(encrypted: string, key: string): Promise<string> {
-  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, key);
-  const decoded = atob(encrypted);
-  return decoded.slice(hash.slice(0, 8).length);
+export async function decryptValue(encrypted: string, _key: string): Promise<string> {
+  return atob(encrypted);
 }

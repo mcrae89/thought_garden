@@ -28,17 +28,19 @@ export function GreenhousePanel({ onClose }: GreenhousePanelProps) {
   const isFull = storedPlants.length >= capacity;
 
   async function handleMoveToGarden(plant: Plant) {
-    // Find first empty plot
     const gardenPlants = plants.filter((p) => p.location === 'garden');
     const gardenSize = Math.sqrt(TIER_LIMITS[tier].gardenPlots);
     const totalPlots = gardenSize * gardenSize;
     const occupiedPlots = new Set(gardenPlants.map((p) => p.plotPosition));
     const firstEmpty = Array.from({ length: totalPlots }, (_, i) => i).find((i) => !occupiedPlots.has(i));
-    if (firstEmpty === undefined) return;
+    if (firstEmpty === undefined) {
+      Alert.alert('Garden Full', 'No empty plots available in the garden.');
+      return;
+    }
     try {
       await moveFromGreenhouse(plant.id, firstEmpty, userId);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not move plant');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not move plant');
     }
   }
 
@@ -47,8 +49,8 @@ export function GreenhousePanel({ onClose }: GreenhousePanelProps) {
     try {
       await revertToSeed(revertTarget.id, userId);
       setRevertTarget(null);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not revert plant');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not revert plant');
     }
   }
 

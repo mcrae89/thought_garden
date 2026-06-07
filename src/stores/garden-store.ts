@@ -11,8 +11,8 @@ import type { SeedData } from '@/stores/seed-store';
 import type { Tier } from '@/shared/types';
 import { getMaxPlots } from '@/modules/garden/garden-service';
 
-function refreshSeeds() {
-  const rows = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE is_planted = 0');
+function refreshSeeds(userId: string) {
+  const rows = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE user_id = ? AND is_planted = 0', [userId]);
   useSeedStore.getState().setSeeds(rows);
 }
 
@@ -37,7 +37,7 @@ export const useGardenStore = create<GardenState>()(
       plantSeed: async (seedId, plotIndex, userId, tier) => {
         const plant = await gardenService.plantSeed(seedId, plotIndex, userId, tier);
         set((state) => ({ plants: [...state.plants, plant] }));
-        refreshSeeds();
+        refreshSeeds(userId);
         const { addNotification } = useNotificationStore.getState();
         const allPlants = gardenService.getGarden(userId);
         if (allPlants.length >= getMaxPlots(tier)) {
@@ -72,7 +72,7 @@ export const useGardenStore = create<GardenState>()(
       revertToSeed: async (plantId, userId) => {
         await gardenService.revertToSeed(plantId, userId);
         set((state) => ({ plants: state.plants.filter((p) => p.id !== plantId) }));
-        refreshSeeds();
+        refreshSeeds(userId);
       },
       waterGarden: async (userId, entryDate) => {
         gardenService.waterGarden(userId, entryDate);

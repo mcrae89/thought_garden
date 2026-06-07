@@ -9,18 +9,29 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
 
   async function handleRegister() {
-    setError('');
-    const result = await authService.signUp(email, password);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Registration failed');
+    if (isLoading) return;
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
-    if (result.session) setSession(result.session);
-    else router.replace('/(auth)/login');
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await authService.signUp(email, password);
+      if (!result.success) {
+        setError(result.error?.message ?? 'Registration failed');
+        return;
+      }
+      if (result.session) setSession(result.session);
+      else router.replace('/(auth)/login');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -44,8 +55,8 @@ export default function RegisterScreen() {
         accessibilityLabel="Password input"
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister} accessibilityLabel="Register">
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading} accessibilityLabel="Register">
+        <Text style={styles.buttonText}>{isLoading ? 'Registering...' : 'Register'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Back to login">
         <Text style={styles.link}>Back to login</Text>
@@ -93,7 +104,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   error: {
-    color: 'red',
+    color: colors.error,
     textAlign: 'center',
   },
 });

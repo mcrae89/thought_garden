@@ -9,16 +9,23 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
 
   async function handleLogin() {
+    if (isLoading) return;
+    setIsLoading(true);
     setError(null);
-    const result = await authService.signInWithEmail(email, password);
-    if (result.success && result.session) {
-      setSession(result.session);
-    } else {
-      setError(result.error?.message ?? 'Login failed');
+    try {
+      const result = await authService.signInWithEmail(email, password);
+      if (result.success && result.session) {
+        setSession(result.session);
+      } else {
+        setError(result.error?.message ?? 'Login failed');
+      }
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -43,8 +50,8 @@ export default function LoginScreen() {
         accessibilityLabel="Password input"
       />
       {error && <Text style={styles.error}>{error}</Text>}
-      <TouchableOpacity style={styles.button} onPress={handleLogin} accessibilityLabel="Sign in">
-        <Text style={styles.buttonText}>Sign In</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading} accessibilityLabel="Sign in">
+        <Text style={styles.buttonText}>{isLoading ? 'Signing in...' : 'Sign In'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/(auth)/register')} accessibilityLabel="Go to register">
         <Text style={styles.link}>Create account</Text>

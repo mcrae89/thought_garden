@@ -3,17 +3,19 @@ import { colors, spacing, radii } from '@/theme/tokens';
 
 interface DeleteConfirmDialogProps {
   visible: boolean;
+  title?: string;
+  message?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function DeleteConfirmDialog({ visible, onConfirm, onCancel }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({ visible, title = 'Delete Entry?', message = 'This action cannot be undone.', onConfirm, onCancel }: DeleteConfirmDialogProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <View style={styles.dialog}>
-          <Text style={styles.title}>Delete Entry?</Text>
-          <Text style={styles.message}>This action cannot be undone.</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel} accessibilityLabel="Cancel delete">
               <Text style={styles.cancelText}>Cancel</Text>

@@ -25,7 +25,7 @@ interface EntryEmotionRow {
 
 export function validateEntryContent(content: string): Result<string> {
   const trimmed = content.trim();
-  if (trimmed.length < 1 || content.length > 10000) {
+  if (trimmed.length < 1 || trimmed.length > 10000) {
     return { success: false, error: { type: 'validation', field: 'content', message: 'Content must be between 1 and 10000 characters' } };
   }
   return { success: true, data: trimmed };
@@ -95,14 +95,15 @@ class EntryServiceImpl implements EntryService {
       if (!limitResult.success) throw limitResult.error;
     }
 
-    const wordCount = computeWordCount(content);
+    const trimmedContent = contentResult.data;
+    const wordCount = computeWordCount(trimmedContent);
     const entryId = generateId();
     const createdAt = now();
 
     db.withTransactionSync(() => {
       db.runSync(
         'INSERT INTO entries (id, user_id, content, primary_emotion, word_count, created_at, is_deleted) VALUES (?, ?, ?, ?, ?, ?, 0)',
-        [entryId, userId, content, primaryEmotion, wordCount, createdAt],
+        [entryId, userId, trimmedContent, primaryEmotion, wordCount, createdAt],
       );
       db.runSync(
         'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
@@ -119,7 +120,7 @@ class EntryServiceImpl implements EntryService {
     return {
       id: entryId,
       userId,
-      content,
+      content: trimmedContent,
       primaryEmotion,
       secondaryEmotions,
       wordCount,
@@ -140,13 +141,14 @@ class EntryServiceImpl implements EntryService {
     const notFoundError: AppError = { type: 'validation', field: 'id', message: 'Entry not found' };
     if (!entry || entry.user_id !== userId || entry.is_deleted === 1) throw notFoundError;
 
-    const wordCount = computeWordCount(content);
+    const trimmedContent = contentResult.data;
+    const wordCount = computeWordCount(trimmedContent);
     const modifiedAt = now();
 
     db.withTransactionSync(() => {
       db.runSync(
         'UPDATE entries SET content = ?, primary_emotion = ?, word_count = ?, modified_at = ? WHERE id = ?',
-        [content, primaryEmotion, wordCount, modifiedAt, id],
+        [trimmedContent, primaryEmotion, wordCount, modifiedAt, id],
       );
       db.runSync('DELETE FROM entry_emotions WHERE entry_id = ?', [id]);
       db.runSync(
@@ -164,7 +166,7 @@ class EntryServiceImpl implements EntryService {
     return {
       id,
       userId,
-      content,
+      content: trimmedContent,
       primaryEmotion,
       secondaryEmotions,
       wordCount,
@@ -182,9 +184,9 @@ class EntryServiceImpl implements EntryService {
     db.runSync('UPDATE entries SET is_deleted = 1 WHERE id = ?', [id]);
   }
 
-  getEntries(options: { limit?: number; offset?: number; date?: string }): Entry[] {
-    let sql = 'SELECT * FROM entries WHERE is_deleted = 0';
-    const params: (string | number)[] = [];
+  getEntries(options: { userId: string; limit?: number; offset?: number; date?: string }): Entry[] {
+    let sql = 'SELECT * FROM entries WHERE is_deleted = 0 AND user_id = ?';
+    const params: (string | number)[] = [options.userId];
 
     if (options.date) {
       const dayStart = new Date(options.date).getTime();

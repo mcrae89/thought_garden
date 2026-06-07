@@ -145,8 +145,9 @@ export const returningEvaluator: Evaluator = (entry, context) => {
   return { achievementKey: 'returning', achievementType: 'returning', seedEmotion: entry.primaryEmotion };
 };
 
-export const consistentThemeEvaluator: Evaluator = (entry, context) => {
-  if (context.consecutiveSameEmotionCount !== 5) return null;
+export const consistentThemeEvaluator: Evaluator = (entry, context, earned) => {
+  if (context.consecutiveSameEmotionCount < 5) return null;
+  if (earned.has('consistent-theme')) return null;
   return { achievementKey: 'consistent-theme', achievementType: 'consistent-theme', seedEmotion: context.lastConsecutiveEmotion! };
 };
 
@@ -194,7 +195,10 @@ export function buildAchievementContext(userId: string, _currentEntry: Entry): A
   const lastConsecutiveEmotion = (stats?.last_emotion as Emotion) ?? null;
 
   const allEntryEmotions = db.getAllSync<EntryEmotionRow>(
-    'SELECT * FROM entry_emotions WHERE type = ?', ['primary'],
+    `SELECT ee.* FROM entry_emotions ee
+     INNER JOIN entries e ON e.id = ee.entry_id
+     WHERE ee.type = 'primary' AND e.user_id = ?`,
+    [userId],
   );
 
   const emotionUsageCounts = new Map<Emotion, number>();

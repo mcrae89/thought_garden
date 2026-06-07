@@ -21,15 +21,18 @@ function NotificationDetail({ notification, onDismiss }: { notification: Achieve
 export function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const notifications = useNotificationStore((s) => s.notifications);
   const dismissAt = useNotificationStore((s) => s.dismissAt);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
-  if (openIndex !== null && notifications[openIndex]) {
+  const openNotification = openKey !== null ? notifications.find((n) => n.achievementKey === openKey) : null;
+
+  if (openNotification) {
+    const index = notifications.indexOf(openNotification);
     return (
       <NotificationDetail
-        notification={notifications[openIndex]}
+        notification={openNotification}
         onDismiss={() => {
-          dismissAt(openIndex);
-          setOpenIndex(null);
+          dismissAt(index);
+          setOpenKey(null);
         }}
       />
     );
@@ -39,8 +42,12 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
     <View style={modalStyles.modalSheet}>
       <Text style={modalStyles.modalTitle}>Notifications</Text>
       {notifications.length === 0 && <Text style={modalStyles.emptyText}>No notifications</Text>}
-      {notifications.map((n, i) => (
-        <TouchableOpacity key={i} onPress={() => setOpenIndex(i)} accessibilityLabel={`Open ${n.achievementType} notification`}>
+      {notifications.map((n) => (
+        <TouchableOpacity
+          key={n.achievementKey}
+          onPress={() => setOpenKey(n.achievementKey)}
+          accessibilityLabel={`Open ${n.achievementType} notification`}
+        >
           <Text style={modalStyles.detailText}>{n.achievementType}: {n.seedEmotion}</Text>
         </TouchableOpacity>
       ))}

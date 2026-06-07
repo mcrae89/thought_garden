@@ -55,8 +55,8 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
     try {
       await plantSeed(seed.id, plotIndex, userId, tier);
       onClose();
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not plant seed');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not plant seed');
     }
   }
 
@@ -64,12 +64,17 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
     <View style={modalStyles.modalSheet}>
       <Text style={modalStyles.modalTitle}>Seed Inventory</Text>
       <View style={styles.seedGrid}>
+        {plotIndex === null && (
+          <Text style={modalStyles.emptyText}>Tap an empty plot in the garden first, then select a seed.</Text>
+        )}
         {seeds.map((seed) => (
           <TouchableOpacity
             key={seed.id}
-            style={styles.seedItem}
+            style={[styles.seedItem, plotIndex === null && styles.seedItemDisabled]}
             onPress={() => handlePlant(seed)}
+            disabled={plotIndex === null}
             accessibilityLabel={`Plant ${seed.emotion} seed`}
+            accessibilityState={{ disabled: plotIndex === null }}
           >
             <Image
               source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed.png')}
@@ -92,6 +97,7 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
 const styles = StyleSheet.create({
   seedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   seedItem: { alignItems: 'center', gap: spacing.xs, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: 8 },
+  seedItemDisabled: { opacity: 0.4 },
   seedSprite: { width: 48, height: 48 },
   seedLabel: { fontSize: 11, color: colors.textSecondary, textAlign: 'center' },
 });

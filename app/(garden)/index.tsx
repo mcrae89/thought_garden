@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, ScrollView, useWindowDimensions, TouchableOpacity, Modal, StyleSheet, Text } from 'react-native';
+import { View, useWindowDimensions, TouchableOpacity, Modal, StyleSheet, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGardenStore } from '@/stores/garden-store';
@@ -38,13 +38,19 @@ const DOOR_FRAMES = [
   require('../../assets/tiles/sliced/door_anim/0.png'),
 ];
 
+const INTERIOR_SOIL_GID = 90;
+
 function getSoilPlots(map: TiledMap, tileSize: number) {
-  const soilLayer = map.layers.find((l) => l.name === 'soil' && l.type === 'tilelayer');
+  // soil_paid is the active layer in the paid map; soil_free in the free map.
+  // Only GID 90 (interior dirt) is a plantable plot — border tiles are excluded.
+  const soilLayer = map.layers.find(
+    (l) => l.type === 'tilelayer' && (l.name === 'soil_paid' || l.name === 'soil_free') && l.visible,
+  );
   if (!soilLayer) return [];
   const plots: Array<{ plotIndex: number; left: number; top: number }> = [];
   let plotIndex = 0;
   for (let i = 0; i < soilLayer.data.length; i++) {
-    if (soilLayer.data[i] !== 0) {
+    if (soilLayer.data[i] === INTERIOR_SOIL_GID) {
       const col = i % soilLayer.width;
       const row = Math.floor(i / soilLayer.width);
       plots.push({ plotIndex: plotIndex++, left: col * tileSize, top: row * tileSize });
@@ -108,6 +114,8 @@ export default function GardenWorldScreen() {
     doorTimerRef.current = setTimeout(animate, 100);
   }, []);
 
+  const closeGreenhouse = useCallback(() => { setActiveModal(null); setDoorFrame(0); }, []);
+
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const userId = session?.userId ?? '';
   const mapData = tier === 'free' ? FREE_MAP : PAID_MAP;
@@ -117,13 +125,6 @@ export default function GardenWorldScreen() {
   useGardenSubscription(userId);
   useEntrySubscription();
   useSeedSubscription();
-
-  // TODO: remove — spoof notification for testing
-  useEffect(() => {
-    if (__DEV__) {
-      useNotificationStore.getState().addNotification({ achievementKey: 'test', achievementType: 'milestone', seedEmotion: 'happy' });
-    }
-  }, []);
 
   const gardenPlants = plants.filter((p) => p.location === 'garden');
 
@@ -145,8 +146,8 @@ export default function GardenWorldScreen() {
   }, []);
 
   return (
-      <View style={styles.container}>
-        <View style={styles.mapWrapper}>
+    <View style={styles.container}>
+      <View style={styles.mapWrapper}>
         <View style={{ zIndex: 0 }}>
           <TilemapRenderer mapData={mapData} tileSize={tileSize} />
         </View>
@@ -210,12 +211,9 @@ export default function GardenWorldScreen() {
             />
           </TouchableOpacity>
         </View>
+      </View>
 
-        </View>
       <View style={styles.hud}>
-        <TouchableOpacity style={styles.hudButton} onPress={() => setActiveModal('greenhouse')} accessibilityLabel="Open greenhouse">
-          <Text style={styles.hudButtonText}>🌿</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.hudButton} onPress={() => setActiveModal('journal')} accessibilityLabel="Open journal">
           <Text style={styles.hudButtonText}>📖</Text>
         </TouchableOpacity>
@@ -227,8 +225,8 @@ export default function GardenWorldScreen() {
       <Modal visible={activeModal === 'seeds'} animationType="slide" transparent onRequestClose={() => { setActiveModal(null); setChestFrame(0); }}>
         <SeedInventoryModal seeds={seeds} plotIndex={selectedPlot} userId={userId} tier={tier} onClose={() => { setActiveModal(null); setChestFrame(0); }} />
       </Modal>
-      <Modal visible={activeModal === 'greenhouse'} animationType="slide" transparent onRequestClose={() => { setActiveModal(null); setDoorFrame(0); }}>
-        <GreenhousePanel onClose={() => { setActiveModal(null); setDoorFrame(0); }} />
+      <Modal visible={activeModal === 'greenhouse'} animationType="slide" transparent onRequestClose={closeGreenhouse}>
+        <GreenhousePanel onClose={closeGreenhouse} />
       </Modal>
       <Modal visible={activeModal === 'journal'} animationType="slide" transparent onRequestClose={() => setActiveModal(null)}>
         <JournalPanel onClose={() => setActiveModal(null)} />

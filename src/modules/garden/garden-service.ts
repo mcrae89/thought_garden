@@ -87,6 +87,12 @@ function createGardenService(): GardenService {
       const gardenPlants = fetchGardenPlants(userId);
       const maxPlots = getMaxPlots(tier);
 
+      if (plotIndex < 0 || plotIndex >= maxPlots) {
+        throwAppError({ type: 'validation', field: 'plotIndex', message: 'Plot index out of bounds' });
+      }
+      if (gardenPlants.length >= maxPlots) {
+        throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: maxPlots });
+      }
       if (gardenPlants.some((p) => p.plot_position === plotIndex)) {
         throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: maxPlots });
       }

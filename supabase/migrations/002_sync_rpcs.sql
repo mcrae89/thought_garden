@@ -101,7 +101,7 @@ BEGIN
           SELECT jsonb_agg(to_jsonb(r))
           FROM (
             SELECT id, user_id, content, primary_emotion, word_count,
-                   created_at, modified_at, is_deleted, _status, _changed,
+                   created_at, modified_at, is_deleted,
                    last_modified_at
             FROM entries
             WHERE user_id = _uid AND last_modified_at > _since
@@ -215,18 +215,17 @@ BEGIN
   )
   LOOP
     INSERT INTO entries (id, user_id, content, primary_emotion, word_count,
-                         created_at, modified_at, is_deleted, _status, _changed, last_modified_at)
+                         created_at, modified_at, is_deleted, last_modified_at)
     VALUES (
       (_record->>'id')::UUID,
       _uid,
       _record->>'content',
       _record->>'primary_emotion',
       COALESCE((_record->>'word_count')::INT, 0),
-      COALESCE((_record->>'created_at')::TIMESTAMPTZ, _now),
-      (_record->>'modified_at')::TIMESTAMPTZ,
+      COALESCE(to_timestamp((_record->>'created_at')::BIGINT / 1000.0), _now),
+      CASE WHEN _record->>'modified_at' IS NULL THEN NULL
+           ELSE to_timestamp((_record->>'modified_at')::BIGINT / 1000.0) END,
       COALESCE((_record->>'is_deleted')::BOOLEAN, FALSE),
-      _record->>'_status',
-      _record->>'_changed',
       _now
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -235,9 +234,8 @@ BEGIN
       word_count = EXCLUDED.word_count,
       modified_at = EXCLUDED.modified_at,
       is_deleted = EXCLUDED.is_deleted,
-      _status = EXCLUDED._status,
-      _changed = EXCLUDED._changed,
-      last_modified_at = _now;
+      last_modified_at = _now
+    WHERE entries.user_id = _uid;
   END LOOP;
 
   -- Handle deleted entries
@@ -295,7 +293,7 @@ BEGIN
       (_record->>'source_achievement_id')::UUID,
       _record->>'emotion',
       _record->>'color_variation',
-      COALESCE((_record->>'earned_at')::TIMESTAMPTZ, _now),
+      COALESCE(to_timestamp((_record->>'earned_at')::BIGINT / 1000.0), _now),
       COALESCE((_record->>'is_planted')::BOOLEAN, FALSE),
       _now
     )
@@ -304,7 +302,8 @@ BEGIN
       emotion = EXCLUDED.emotion,
       color_variation = EXCLUDED.color_variation,
       is_planted = EXCLUDED.is_planted,
-      last_modified_at = _now;
+      last_modified_at = _now
+    WHERE seeds.user_id = _uid;
   END LOOP;
 
   -- Handle deleted seeds
@@ -333,8 +332,9 @@ BEGIN
       COALESCE(_record->>'growth_stage', 'seed'),
       COALESCE(_record->>'location', 'garden'),
       (_record->>'plot_position')::INT,
-      COALESCE((_record->>'planted_at')::TIMESTAMPTZ, _now),
-      (_record->>'last_watered_at')::TIMESTAMPTZ,
+      COALESCE(to_timestamp((_record->>'planted_at')::BIGINT / 1000.0), _now),
+      CASE WHEN _record->>'last_watered_at' IS NULL THEN NULL
+           ELSE to_timestamp((_record->>'last_watered_at')::BIGINT / 1000.0) END,
       (_record->>'last_growth_date')::DATE,
       _now
     )
@@ -346,7 +346,8 @@ BEGIN
       plot_position = EXCLUDED.plot_position,
       last_watered_at = EXCLUDED.last_watered_at,
       last_growth_date = EXCLUDED.last_growth_date,
-      last_modified_at = _now;
+      last_modified_at = _now
+    WHERE plants.user_id = _uid;
   END LOOP;
 
   -- Handle deleted plants
@@ -371,7 +372,7 @@ BEGIN
       _record->>'achievement_type',
       _record->>'achievement_key',
       (_record->>'trigger_entry_id')::UUID,
-      COALESCE((_record->>'earned_at')::TIMESTAMPTZ, _now),
+      COALESCE(to_timestamp((_record->>'earned_at')::BIGINT / 1000.0), _now),
       COALESCE((_record->>'is_active')::BOOLEAN, TRUE),
       _now
     )
@@ -379,7 +380,8 @@ BEGIN
       achievement_type = EXCLUDED.achievement_type,
       trigger_entry_id = EXCLUDED.trigger_entry_id,
       is_active = EXCLUDED.is_active,
-      last_modified_at = _now;
+      last_modified_at = _now
+    WHERE achievement_records.user_id = _uid;
   END LOOP;
 
   -- Handle deleted achievement_records

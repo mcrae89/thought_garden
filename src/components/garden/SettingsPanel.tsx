@@ -7,13 +7,24 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const tier = useAuthStore((s) => s.tier);
   const clearSession = useAuthStore((s) => s.clearSession);
 
+  async function handleSignOut() {
+    try {
+      await authService.signOut();
+    } catch (e) {
+      // signOut failure is non-fatal; clear session regardless
+    } finally {
+      clearSession();
+      onClose();
+    }
+  }
+
   return (
     <View style={modalStyles.modalSheet}>
       <Text style={modalStyles.modalTitle}>Settings</Text>
       <Text style={modalStyles.detailText}>Tier: {tier}</Text>
       <TouchableOpacity
         style={modalStyles.actionButton}
-        onPress={async () => { await authService.signOut(); clearSession(); onClose(); }}
+        onPress={handleSignOut}
         accessibilityLabel="Sign out"
       >
         <Text style={modalStyles.actionButtonText}>Sign Out</Text>

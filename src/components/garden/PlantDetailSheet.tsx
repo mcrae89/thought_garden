@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useGardenStore } from '@/stores/garden-store';
 import { modalStyles } from './styles';
 import type { Plant } from '@/modules/garden';
@@ -16,13 +16,22 @@ export function PlantDetailSheet({ plant, userId, tier, onClose }: Props) {
 
   if (!plant) return null;
 
+  async function handleMoveToGreenhouse() {
+    try {
+      await moveToGreenhouse(plant!.id, userId, tier);
+      onClose();
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not move plant');
+    }
+  }
+
   return (
     <View style={modalStyles.modalSheet}>
       <Text style={modalStyles.modalTitle}>{plant.emotion}</Text>
       <Text style={modalStyles.detailText}>Stage: {plant.growthStage}</Text>
       <TouchableOpacity
         style={modalStyles.actionButton}
-        onPress={async () => { await moveToGreenhouse(plant.id, userId, tier); onClose(); }}
+        onPress={handleMoveToGreenhouse}
         accessibilityLabel="Move to greenhouse"
       >
         <Text style={modalStyles.actionButtonText}>Move to Greenhouse</Text>

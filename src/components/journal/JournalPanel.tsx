@@ -43,12 +43,12 @@ export function JournalPanel({ onClose }: JournalPanelProps) {
         await editEntry(editingEntry.id, content, primaryEmotion, secondaryEmotions, userId, tier);
       } else {
         await createEntry(content, primaryEmotion, secondaryEmotions, userId, tier);
+        setDailyCount((c) => c + 1);
       }
       setView('list');
       setEditingEntry(null);
-      setDailyCount((c) => c + 1);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Something went wrong');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Something went wrong');
     }
   }
 
@@ -57,8 +57,8 @@ export function JournalPanel({ onClose }: JournalPanelProps) {
     try {
       await deleteEntry(deleteTargetId, userId);
       setDeleteTargetId(null);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not delete entry');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not delete entry');
     }
   }
 
