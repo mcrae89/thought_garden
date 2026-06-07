@@ -73,12 +73,12 @@ function fetchGreenhousePlants(userId: string): PlantRow[] {
 
 function createGardenService(): GardenService {
   return {
-    async getGarden(userId: string): Promise<Plant[]> {
+    getGarden(userId: string): Plant[] {
       const rows = fetchGardenPlants(userId);
       return rows.map(toPlant);
     },
 
-    async plantSeed(seedId: string, plotIndex: number, userId: string, tier: Tier): Promise<Plant> {
+    plantSeed(seedId: string, plotIndex: number, userId: string, tier: Tier): Plant {
       const seed = db.getFirstSync<SeedRow>('SELECT * FROM seeds WHERE id = ?', [seedId]);
       if (!seed || seed.user_id !== userId || seed.is_planted === 1) {
         throwAppError({ type: 'validation', field: 'id', message: 'Not found' });
@@ -117,7 +117,7 @@ function createGardenService(): GardenService {
       };
     },
 
-    async movePlant(plantId: string, toPlotIndex: number, userId: string): Promise<void> {
+    movePlant(plantId: string, toPlotIndex: number, userId: string): void {
       const plant = db.getFirstSync<PlantRow>('SELECT * FROM plants WHERE id = ?', [plantId]);
       if (!plant || plant.user_id !== userId || plant.location !== 'garden') {
         throwAppError({ type: 'validation', field: 'id', message: 'Not found' });
@@ -131,7 +131,7 @@ function createGardenService(): GardenService {
       db.runSync('UPDATE plants SET plot_position = ? WHERE id = ?', [toPlotIndex, plantId]);
     },
 
-    async moveToGreenhouse(plantId: string, userId: string, tier: Tier): Promise<void> {
+    moveToGreenhouse(plantId: string, userId: string, tier: Tier): void {
       const plant = db.getFirstSync<PlantRow>('SELECT * FROM plants WHERE id = ?', [plantId]);
       if (!plant || plant.user_id !== userId || plant.location !== 'garden') {
         throwAppError({ type: 'validation', field: 'id', message: 'Not found' });
@@ -147,7 +147,7 @@ function createGardenService(): GardenService {
       db.runSync('UPDATE plants SET location = ?, plot_position = NULL WHERE id = ?', ['greenhouse', plantId]);
     },
 
-    async moveFromGreenhouse(plantId: string, plotIndex: number, userId: string): Promise<void> {
+    moveFromGreenhouse(plantId: string, plotIndex: number, userId: string): void {
       const plant = db.getFirstSync<PlantRow>('SELECT * FROM plants WHERE id = ?', [plantId]);
       if (!plant || plant.user_id !== userId || plant.location !== 'greenhouse') {
         throwAppError({ type: 'validation', field: 'id', message: 'Not found' });
@@ -161,22 +161,26 @@ function createGardenService(): GardenService {
       db.runSync('UPDATE plants SET location = ?, plot_position = ? WHERE id = ?', ['garden', plotIndex, plantId]);
     },
 
-    async revertToSeed(plantId: string, userId: string): Promise<void> {
+    revertToSeed(plantId: string, userId: string): void {
       const plant = db.getFirstSync<PlantRow>('SELECT * FROM plants WHERE id = ?', [plantId]);
       if (!plant || plant.user_id !== userId) {
         throwAppError({ type: 'validation', field: 'id', message: 'Not found' });
       }
 
+      const originalSeed = db.getFirstSync<SeedRow & { source_achievement_id: string }>(
+        'SELECT * FROM seeds WHERE id = ?', [plant.seed_id],
+      );
+
       db.withTransactionSync(() => {
         db.runSync(
           'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, NULL, ?, ?, ?, ?, 0)',
-          [generateId(), userId, plant.seed_id, plant.emotion, plant.color_variation, now()],
+          [generateId(), userId, originalSeed?.source_achievement_id ?? null, plant.emotion, plant.color_variation, now()],
         );
         db.runSync('DELETE FROM plants WHERE id = ?', [plantId]);
       });
     },
 
-    async waterGarden(userId: string, entryDate: string): Promise<WateringResult> {
+    waterGarden(userId: string, entryDate: string): WateringResult {
       const gardenPlants = fetchGardenPlants(userId);
       const advances: { plantId: string; previousStage: GrowthStage; newStage: GrowthStage }[] = [];
 

@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEntryStore } from '@/stores/entry-store';
-import { useNotificationStore } from '@/stores/notification-store';
 import { entryService } from '@/modules/entries';
-import { achievementEngine, buildAchievementContext } from '@/modules/achievements';
-import { gardenService } from '@/modules/garden';
 import { EntryListItem } from './EntryListItem';
 import { EntryForm } from './EntryForm';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
@@ -37,29 +34,32 @@ export function JournalPanel({ onClose }: JournalPanelProps) {
   const dailyLimit = TIER_LIMITS[tier].dailyEntryLimit;
 
   useEffect(() => {
-    entryService.getDailyEntryCount(new Date().toISOString().split('T')[0]).then(setDailyCount);
+    setDailyCount(entryService.getDailyEntryCount(new Date().toISOString().split('T')[0]));
   }, []);
 
   async function handleSubmit(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[]) {
-    if (editingEntry) {
-      await editEntry(editingEntry.id, content, primaryEmotion, secondaryEmotions, userId, tier);
-    } else {
-      const entry = await createEntry(content, primaryEmotion, secondaryEmotions, userId, tier);
-      const context = await buildAchievementContext(userId, entry);
-      const results = await achievementEngine.evaluateEntry(entry, context);
-      const { addNotification } = useNotificationStore.getState();
-      for (const r of results) addNotification(r);
-      await gardenService.waterGarden(userId, entry.createdAt.toISOString().slice(0, 10));
+    try {
+      if (editingEntry) {
+        await editEntry(editingEntry.id, content, primaryEmotion, secondaryEmotions, userId, tier);
+      } else {
+        await createEntry(content, primaryEmotion, secondaryEmotions, userId, tier);
+      }
+      setView('list');
+      setEditingEntry(null);
+      setDailyCount((c) => c + 1);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Something went wrong');
     }
-    setView('list');
-    setEditingEntry(null);
-    setDailyCount((c) => c + 1);
   }
 
   async function handleDelete() {
     if (!deleteTargetId) return;
-    await deleteEntry(deleteTargetId, userId);
-    setDeleteTargetId(null);
+    try {
+      await deleteEntry(deleteTargetId, userId);
+      setDeleteTargetId(null);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not delete entry');
+    }
   }
 
   if (view === 'create' || view === 'edit') {

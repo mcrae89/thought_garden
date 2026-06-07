@@ -6,6 +6,7 @@ import type { Tier } from '@/shared/types';
 interface AuthState {
   session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   tier: Tier;
   setSession: (session: Session | null) => void;
   clearSession: () => void;
@@ -16,11 +17,12 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       session: null,
       isAuthenticated: false,
+      isLoading: true,
       tier: 'free',
       setSession: (session) =>
-        set({ session, isAuthenticated: session !== null }),
+        set({ session, isAuthenticated: session !== null, isLoading: false }),
       clearSession: () =>
-        set({ session: null, isAuthenticated: false, tier: 'free' }),
+        set({ session: null, isAuthenticated: false, isLoading: false, tier: 'free' }),
     }),
     { name: 'auth-store', enabled: __DEV__ },
   ),

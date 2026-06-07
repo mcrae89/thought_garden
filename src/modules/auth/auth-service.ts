@@ -122,6 +122,9 @@ class AuthServiceImpl implements AuthService {
   }
 
   async signUp(email: string, password: string): Promise<AuthResult> {
+    if (!__DEV__) {
+      return { success: false, error: { code: 'invalid_credentials', message: 'Email sign-up is only available in dev' } };
+    }
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { success: false, error: mapSupabaseError(error.message) };
     if (!data.session) return { success: true };

@@ -7,7 +7,6 @@ import { useSeedStore } from '@/stores/seed-store';
 import { useNotificationStore } from '@/stores/notification-store';
 import { JournalPanel } from '@/components/journal/JournalPanel';
 import { GreenhousePanel } from '@/components/greenhouse/GreenhousePanel';
-import { AchievementToast } from '@/components/notifications/AchievementToast';
 import { PlantSprite } from '@/components/garden/PlantSprite';
 import { SeedInventoryModal } from '@/components/garden/SeedInventoryModal';
 import { PlantDetailSheet } from '@/components/garden/PlantDetailSheet';
@@ -27,7 +26,17 @@ const FREE_MAP: TiledMap = require('../../assets/tiles/garden-map-free.json');
 const PAID_MAP: TiledMap = require('../../assets/tiles/garden-map-paid.json');
 
 const CHEST_TILE = { col: 4, row: 9 };
-const MAILBOX_TILE = { col: 15, row: 9 };
+const MAILBOX_TILE = { col: 6.7, row: 8.5 };
+const DOOR_TILE = { col: 6, row: 8 };
+
+const DOOR_FRAMES = [
+  require('../../assets/tiles/sliced/door_anim/5.png'),
+  require('../../assets/tiles/sliced/door_anim/4.png'),
+  require('../../assets/tiles/sliced/door_anim/3.png'),
+  require('../../assets/tiles/sliced/door_anim/2.png'),
+  require('../../assets/tiles/sliced/door_anim/1.png'),
+  require('../../assets/tiles/sliced/door_anim/0.png'),
+];
 
 function getSoilPlots(map: TiledMap, tileSize: number) {
   const soilLayer = map.layers.find((l) => l.name === 'soil' && l.type === 'tilelayer');
@@ -52,26 +61,24 @@ export default function GardenWorldScreen() {
   const plants = useGardenStore((s) => s.plants);
   const seeds = useSeedStore((s) => s.seeds);
   const hasUnread = useNotificationStore((s) => s.hasUnread);
-  const clearAll = useNotificationStore((s) => s.clearAll);
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [chestFrame, setChestFrame] = useState(0);
+  const [doorFrame, setDoorFrame] = useState(0);
   const chestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChestPress = useCallback(() => {
-    if (chestTimerRef.current) return; // animation already running
+    if (chestTimerRef.current) return;
     let frame = 0;
     const animate = () => {
       frame++;
       if (frame >= 4) {
         setChestFrame(4);
         chestTimerRef.current = null;
-        setTimeout(() => {
-          setActiveModal('seeds');
-          setChestFrame(0);
-        }, 200);
+        setActiveModal('seeds');
       } else {
         setChestFrame(frame);
         chestTimerRef.current = setTimeout(animate, 100);
@@ -81,7 +88,24 @@ export default function GardenWorldScreen() {
   }, []);
 
   useEffect(() => {
-    return () => { if (chestTimerRef.current) clearTimeout(chestTimerRef.current); };
+    return () => { if (chestTimerRef.current) clearTimeout(chestTimerRef.current); if (doorTimerRef.current) clearTimeout(doorTimerRef.current); };
+  }, []);
+
+  const handleDoorPress = useCallback(() => {
+    if (doorTimerRef.current) return;
+    let frame = 0;
+    const animate = () => {
+      frame++;
+      if (frame >= 5) {
+        setDoorFrame(5);
+        doorTimerRef.current = null;
+        setActiveModal('greenhouse');
+      } else {
+        setDoorFrame(frame);
+        doorTimerRef.current = setTimeout(animate, 100);
+      }
+    };
+    doorTimerRef.current = setTimeout(animate, 100);
   }, []);
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -93,6 +117,13 @@ export default function GardenWorldScreen() {
   useGardenSubscription(userId);
   useEntrySubscription();
   useSeedSubscription();
+
+  // TODO: remove — spoof notification for testing
+  useEffect(() => {
+    if (__DEV__) {
+      useNotificationStore.getState().addNotification({ achievementKey: 'test', achievementType: 'milestone', seedEmotion: 'happy' });
+    }
+  }, []);
 
   const gardenPlants = plants.filter((p) => p.location === 'garden');
 
@@ -110,15 +141,29 @@ export default function GardenWorldScreen() {
   }, [gardenPlants]);
 
   const handleMailboxPress = useCallback(() => {
-    clearAll();
     setActiveModal('notifications');
-  }, [clearAll]);
+  }, []);
 
   return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ position: 'relative' }}>
-      <View style={{ position: 'relative' }}>
-        <TilemapRenderer mapData={mapData} tileSize={tileSize} />
+      <View style={styles.container}>
+        <View style={styles.mapWrapper}>
+        <View style={{ zIndex: 0 }}>
+          <TilemapRenderer mapData={mapData} tileSize={tileSize} />
+        </View>
+
+        <View style={{ position: 'absolute', left: DOOR_TILE.col * tileSize, top: DOOR_TILE.row * tileSize + Math.floor(tileSize * 0.4), width: tileSize, height: Math.floor(tileSize * 0.6), zIndex: 20, overflow: 'hidden' }}>
+          <TouchableOpacity
+            style={{ width: tileSize, height: tileSize, marginTop: -Math.floor(tileSize * 0.4) }}
+            onPress={handleDoorPress}
+            accessibilityLabel="Open greenhouse door"
+          >
+            <Image
+              source={DOOR_FRAMES[doorFrame]}
+              style={{ width: tileSize, height: tileSize }}
+              contentFit="fill"
+            />
+          </TouchableOpacity>
+        </View>
 
         {soilPlots.map(({ plotIndex, left, top }) => {
           const plant = gardenPlants.find((p) => p.plotPosition === plotIndex);
@@ -146,19 +191,25 @@ export default function GardenWorldScreen() {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{ position: 'absolute', left: MAILBOX_TILE.col * tileSize, top: MAILBOX_TILE.row * tileSize, width: tileSize, height: tileSize, zIndex: 10 }}
-          onPress={handleMailboxPress}
-          accessibilityLabel={hasUnread ? 'Mailbox with new notifications' : 'Mailbox'}
+        <View
+          style={{ position: 'absolute', left: MAILBOX_TILE.col * tileSize - tileSize, top: MAILBOX_TILE.row * tileSize - tileSize, width: tileSize * 3, height: tileSize * 3, zIndex: 10 }}
         >
-          <Image
-            source={require('../../assets/tiles/sprout-lands/structures/Mailbox Animation Frames.png')}
-            style={{ width: tileSize, height: tileSize }}
-            contentFit="none"
-            accessibilityLabel="Mailbox"
-          />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={{ width: tileSize * 3, height: tileSize * 3 }}
+            onPress={handleMailboxPress}
+            accessibilityLabel={hasUnread ? 'Mailbox with new notifications' : 'Mailbox'}
+          >
+            <Image
+              source={hasUnread
+                ? require('../../assets/tiles/sprout-lands/structures/mailbox-with-envelope.png')
+                : require('../../assets/tiles/sprout-lands/structures/mailbox-idle.png')
+              }
+              style={{ width: tileSize * 3, height: tileSize * 3 }}
+              contentFit="contain"
+              accessibilityLabel="Mailbox"
+            />
+          </TouchableOpacity>
+        </View>
 
         </View>
       <View style={styles.hud}>
@@ -173,13 +224,11 @@ export default function GardenWorldScreen() {
         </TouchableOpacity>
       </View>
 
-      <AchievementToast />
-
-      <Modal visible={activeModal === 'seeds'} animationType="slide" transparent onRequestClose={() => setActiveModal(null)}>
-        <SeedInventoryModal seeds={seeds} plotIndex={selectedPlot} userId={userId} tier={tier} onClose={() => setActiveModal(null)} />
+      <Modal visible={activeModal === 'seeds'} animationType="slide" transparent onRequestClose={() => { setActiveModal(null); setChestFrame(0); }}>
+        <SeedInventoryModal seeds={seeds} plotIndex={selectedPlot} userId={userId} tier={tier} onClose={() => { setActiveModal(null); setChestFrame(0); }} />
       </Modal>
-      <Modal visible={activeModal === 'greenhouse'} animationType="slide" transparent onRequestClose={() => setActiveModal(null)}>
-        <GreenhousePanel onClose={() => setActiveModal(null)} />
+      <Modal visible={activeModal === 'greenhouse'} animationType="slide" transparent onRequestClose={() => { setActiveModal(null); setDoorFrame(0); }}>
+        <GreenhousePanel onClose={() => { setActiveModal(null); setDoorFrame(0); }} />
       </Modal>
       <Modal visible={activeModal === 'journal'} animationType="slide" transparent onRequestClose={() => setActiveModal(null)}>
         <JournalPanel onClose={() => setActiveModal(null)} />
@@ -198,7 +247,8 @@ export default function GardenWorldScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  mapWrapper: { position: 'relative' },
   hud: { position: 'absolute', bottom: spacing.lg, right: spacing.lg, gap: spacing.sm },
   hudButton: { width: 48, height: 48, backgroundColor: colors.surface, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
   hudButtonText: { fontSize: 24 },

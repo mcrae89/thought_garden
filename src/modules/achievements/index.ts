@@ -34,10 +34,10 @@ export interface GardenEvent {
 }
 
 export interface AchievementEngine {
-  evaluateEntry(entry: Entry, context: AchievementContext): Promise<AchievementResult[]>;
-  evaluateGardenEvent(event: GardenEvent): Promise<AchievementResult | null>;
-  getEarnedAchievements(userId: string): Promise<{ key: string; type: string; earnedAt: Date }[]>;
-  resetStreakIfNeeded(userId: string): Promise<void>;
+  evaluateEntry(entry: Entry, context: AchievementContext): AchievementResult[];
+  evaluateGardenEvent(event: GardenEvent): AchievementResult | null;
+  getEarnedAchievements(userId: string): { key: string; type: string; earnedAt: Date }[];
+  resetStreakIfNeeded(userId: string): void;
 }
 
 export { achievementEngine } from './achievement-engine';

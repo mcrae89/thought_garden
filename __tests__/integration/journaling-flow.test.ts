@@ -63,10 +63,10 @@ beforeEach(() => {
 
 describe('Journaling flow integration', () => {
   it('createEntry → evaluateEntry → notifications → waterGarden', async () => {
-    (entryService.createEntry as jest.Mock).mockResolvedValue(mockEntry);
-    (buildAchievementContext as jest.Mock).mockResolvedValue(mockContext);
-    (achievementEngine.evaluateEntry as jest.Mock).mockResolvedValue([mockAchievement]);
-    (gardenService.waterGarden as jest.Mock).mockResolvedValue({ plantsWatered: 1, plantsAdvanced: [] });
+    (entryService.createEntry as jest.Mock).mockReturnValue(mockEntry);
+    (buildAchievementContext as jest.Mock).mockReturnValue(mockContext);
+    (achievementEngine.evaluateEntry as jest.Mock).mockReturnValue([mockAchievement]);
+    (gardenService.waterGarden as jest.Mock).mockReturnValue({ plantsWatered: 1, plantsAdvanced: [] });
 
     const result = await useEntryStore.getState().createEntry(
       'test content', 'happy', [], 'user-1', 'free',
@@ -81,10 +81,10 @@ describe('Journaling flow integration', () => {
   });
 
   it('no achievements earned → no notifications, waterGarden still called', async () => {
-    (entryService.createEntry as jest.Mock).mockResolvedValue(mockEntry);
-    (buildAchievementContext as jest.Mock).mockResolvedValue(mockContext);
-    (achievementEngine.evaluateEntry as jest.Mock).mockResolvedValue([]);
-    (gardenService.waterGarden as jest.Mock).mockResolvedValue({ plantsWatered: 0, plantsAdvanced: [] });
+    (entryService.createEntry as jest.Mock).mockReturnValue(mockEntry);
+    (buildAchievementContext as jest.Mock).mockReturnValue(mockContext);
+    (achievementEngine.evaluateEntry as jest.Mock).mockReturnValue([]);
+    (gardenService.waterGarden as jest.Mock).mockReturnValue({ plantsWatered: 0, plantsAdvanced: [] });
 
     await useEntryStore.getState().createEntry('test content', 'happy', [], 'user-1', 'free');
 
@@ -94,19 +94,19 @@ describe('Journaling flow integration', () => {
 
   it('calls services in correct order', async () => {
     const callOrder: string[] = [];
-    (entryService.createEntry as jest.Mock).mockImplementation(async () => {
+    (entryService.createEntry as jest.Mock).mockImplementation(() => {
       callOrder.push('createEntry');
       return mockEntry;
     });
-    (buildAchievementContext as jest.Mock).mockImplementation(async () => {
+    (buildAchievementContext as jest.Mock).mockImplementation(() => {
       callOrder.push('buildContext');
       return mockContext;
     });
-    (achievementEngine.evaluateEntry as jest.Mock).mockImplementation(async () => {
+    (achievementEngine.evaluateEntry as jest.Mock).mockImplementation(() => {
       callOrder.push('evaluateEntry');
       return [];
     });
-    (gardenService.waterGarden as jest.Mock).mockImplementation(async () => {
+    (gardenService.waterGarden as jest.Mock).mockImplementation(() => {
       callOrder.push('waterGarden');
       return { plantsWatered: 0, plantsAdvanced: [] };
     });

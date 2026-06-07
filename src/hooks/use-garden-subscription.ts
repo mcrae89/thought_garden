@@ -6,10 +6,6 @@ export function useGardenSubscription(userId: string) {
   const setPlants = useGardenStore((s) => s.setPlants);
   useEffect(() => {
     if (!userId) return;
-    gardenService.getGarden(userId).then(setPlants);
-    const interval = setInterval(() => {
-      gardenService.getGarden(userId).then(setPlants);
-    }, 30_000);
-    return () => clearInterval(interval);
+    setPlants(gardenService.getGarden(userId));
   }, [userId]);
 }

@@ -245,7 +245,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 161, 0, 0, 161, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 161, 161, 0, 161, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -284,7 +284,7 @@
             0, 0, 0, 0, 160, 0, 0, 0, 0, 162, 0, 0, 0, 0,
             0, 0, 0, 0, 160, 0, 0, 0, 0, 162, 0, 0, 0, 0,
             0, 0, 0, 0, 160, 0, 0, 0, 0, 162, 0, 0, 0, 0,
-            0, 0, 0, 0, 165, 168, 210, 166, 168, 167, 0, 0, 0, 0,
+            0, 0, 0, 0, 165, 168, 0, 166, 168, 167, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -392,7 +392,7 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":18,
+ "nextlayerid":19,
  "nextobjectid":1,
  "orientation":"orthogonal",
  "renderorder":"right-down",
@@ -401,51 +401,51 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Grass_Hills_Tiles_v2.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Grass_Hills_Tiles_v2.tsx"
         }, 
         {
          "firstgid":78,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Soil_Ground_Hills_Tiles.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Darker_Soil_Ground_Hills_Tiles.tsx"
         }, 
         {
          "firstgid":155,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Walls_Tilset.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Walls_Tilset.tsx"
         }, 
         {
          "firstgid":170,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Roof_Tilset.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Wooden_House_Roof_Tilset.tsx"
         }, 
         {
          "firstgid":205,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/door animation sprites.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/door animation sprites.tsx"
         }, 
         {
          "firstgid":241,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Fences.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Fences.tsx"
         }, 
         {
          "firstgid":273,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Fence gates animation sprites.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Fence gates animation sprites.tsx"
         }, 
         {
          "firstgid":303,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Paths.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Paths.tsx"
         }, 
         {
          "firstgid":319,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Trees, stumps and bushes.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Trees, stumps and bushes.tsx"
         }, 
         {
          "firstgid":403,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Water well.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Water well.tsx"
         }, 
         {
          "firstgid":407,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/Mushrooms, Flowers, Stones.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/Mushrooms, Flowers, Stones.tsx"
         }, 
         {
          "firstgid":467,
-         "source":"..\/..\/..\/..\/..\/OneDrive\/thought_garden\/signs_sides.tsx"
+         "source":"..\/..\/..\/..\/OneDrive\/thought_garden\/signs_sides.tsx"
         }],
  "tilewidth":16,
  "type":"map",

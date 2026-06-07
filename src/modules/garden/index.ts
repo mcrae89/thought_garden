@@ -26,13 +26,13 @@ export interface WateringResult {
 }
 
 export interface GardenService {
-  getGarden(userId: string): Promise<Plant[]>;
-  plantSeed(seedId: string, plotIndex: number, userId: string, tier: Tier): Promise<Plant>;
-  movePlant(plantId: string, toPlotIndex: number, userId: string): Promise<void>;
-  moveToGreenhouse(plantId: string, userId: string, tier: Tier): Promise<void>;
-  moveFromGreenhouse(plantId: string, plotIndex: number, userId: string): Promise<void>;
-  revertToSeed(plantId: string, userId: string): Promise<void>;
-  waterGarden(userId: string, entryDate: string): Promise<WateringResult>;
+  getGarden(userId: string): Plant[];
+  plantSeed(seedId: string, plotIndex: number, userId: string, tier: Tier): Plant;
+  movePlant(plantId: string, toPlotIndex: number, userId: string): void;
+  moveToGreenhouse(plantId: string, userId: string, tier: Tier): void;
+  moveFromGreenhouse(plantId: string, plotIndex: number, userId: string): void;
+  revertToSeed(plantId: string, userId: string): void;
+  waterGarden(userId: string, entryDate: string): WateringResult;
 }
 
 export { gardenService } from './garden-service';

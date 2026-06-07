@@ -179,7 +179,7 @@ const evaluators: Evaluator[] = [
 
 // --- Context builder ---
 
-export async function buildAchievementContext(userId: string, _currentEntry: Entry): Promise<AchievementContext> {
+export function buildAchievementContext(userId: string, _currentEntry: Entry): AchievementContext {
   const achievementRecords = db.getAllSync<AchievementRow>(
     'SELECT * FROM achievement_records WHERE user_id = ?', [userId],
   );
@@ -239,7 +239,7 @@ const GARDEN_EVENT_KEYS: Record<GardenEvent['type'], string> = {
 // --- Engine implementation ---
 
 class AchievementEngineImpl implements AchievementEngine {
-  async evaluateEntry(entry: Entry, context: AchievementContext): Promise<AchievementResult[]> {
+  evaluateEntry(entry: Entry, context: AchievementContext): AchievementResult[] {
     const records = db.getAllSync<AchievementRow>(
       'SELECT * FROM achievement_records WHERE user_id = ? AND is_active = 1', [entry.userId],
     );
@@ -272,7 +272,7 @@ class AchievementEngineImpl implements AchievementEngine {
     return results;
   }
 
-  async evaluateGardenEvent(event: GardenEvent): Promise<AchievementResult | null> {
+  evaluateGardenEvent(event: GardenEvent): AchievementResult | null {
     const key = GARDEN_EVENT_KEYS[event.type];
     const existing = db.getFirstSync<AchievementRow>(
       'SELECT * FROM achievement_records WHERE user_id = ? AND achievement_key = ?', [event.userId, key],
@@ -299,14 +299,14 @@ class AchievementEngineImpl implements AchievementEngine {
     return result;
   }
 
-  async getEarnedAchievements(userId: string): Promise<{ key: string; type: string; earnedAt: Date }[]> {
+  getEarnedAchievements(userId: string): { key: string; type: string; earnedAt: Date }[] {
     const records = db.getAllSync<AchievementRow>(
       'SELECT * FROM achievement_records WHERE user_id = ?', [userId],
     );
     return records.map(r => ({ key: r.achievement_key, type: r.achievement_type, earnedAt: new Date(r.earned_at) }));
   }
 
-  async resetStreakIfNeeded(userId: string): Promise<void> {
+  resetStreakIfNeeded(userId: string): void {
     const stats = db.getFirstSync<UserStatsRow>('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
     if (!stats?.last_entry_date) return;
 

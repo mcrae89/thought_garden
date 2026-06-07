@@ -21,12 +21,12 @@ export interface EntryEmotion {
 }
 
 export interface EntryService {
-  createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Promise<Entry>;
-  editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Promise<Entry>;
-  deleteEntry(id: string, userId: string): Promise<void>;
-  getEntries(options: { limit?: number; offset?: number; date?: string }): Promise<Entry[]>;
-  getEntryCount(): Promise<number>;
-  getDailyEntryCount(date: string): Promise<number>;
+  createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Entry;
+  editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Entry;
+  deleteEntry(id: string, userId: string): void;
+  getEntries(options: { limit?: number; offset?: number; date?: string }): Entry[];
+  getEntryCount(): number;
+  getDailyEntryCount(date: string): number;
 }
 
 export { entryService } from './entry-service';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGardenStore } from '@/stores/garden-store';
@@ -35,13 +35,21 @@ export function GreenhousePanel({ onClose }: GreenhousePanelProps) {
     const occupiedPlots = new Set(gardenPlants.map((p) => p.plotPosition));
     const firstEmpty = Array.from({ length: totalPlots }, (_, i) => i).find((i) => !occupiedPlots.has(i));
     if (firstEmpty === undefined) return;
-    await moveFromGreenhouse(plant.id, firstEmpty, userId);
+    try {
+      await moveFromGreenhouse(plant.id, firstEmpty, userId);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not move plant');
+    }
   }
 
   async function handleRevert() {
     if (!revertTarget) return;
-    await revertToSeed(revertTarget.id, userId);
-    setRevertTarget(null);
+    try {
+      await revertToSeed(revertTarget.id, userId);
+      setRevertTarget(null);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not revert plant');
+    }
   }
 
   return (

@@ -5,6 +5,7 @@ import { useAuthInit } from '@/hooks/use-auth-init';
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const router = useRouter();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
@@ -12,14 +13,14 @@ export default function RootLayout() {
   useAuthInit();
 
   useEffect(() => {
-    if (!navigationState?.key) return;
+    if (isLoading || !navigationState?.key) return;
     const inAuthGroup = segments[0] === '(auth)';
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(garden)');
     }
-  }, [isAuthenticated, segments, navigationState?.key]);
+  }, [isAuthenticated, isLoading, segments, navigationState?.key]);
 
   return <Slot />;
 }

@@ -78,7 +78,7 @@ function computeWordCount(content: string): number {
 }
 
 class EntryServiceImpl implements EntryService {
-  async createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Promise<Entry> {
+  createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Entry {
     const contentResult = validateEntryContent(content);
     if (!contentResult.success) throw contentResult.error;
 
@@ -129,7 +129,7 @@ class EntryServiceImpl implements EntryService {
     };
   }
 
-  async editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, _tier: Tier): Promise<Entry> {
+  editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, _tier: Tier): Entry {
     const contentResult = validateEntryContent(content);
     if (!contentResult.success) throw contentResult.error;
 
@@ -174,7 +174,7 @@ class EntryServiceImpl implements EntryService {
     };
   }
 
-  async deleteEntry(id: string, userId: string): Promise<void> {
+  deleteEntry(id: string, userId: string): void {
     const entry = db.getFirstSync<EntryRow>('SELECT * FROM entries WHERE id = ?', [id]);
     const notFoundError: AppError = { type: 'validation', field: 'id', message: 'Entry not found' };
     if (!entry || entry.user_id !== userId || entry.is_deleted === 1) throw notFoundError;
@@ -182,7 +182,7 @@ class EntryServiceImpl implements EntryService {
     db.runSync('UPDATE entries SET is_deleted = 1 WHERE id = ?', [id]);
   }
 
-  async getEntries(options: { limit?: number; offset?: number; date?: string }): Promise<Entry[]> {
+  getEntries(options: { limit?: number; offset?: number; date?: string }): Entry[] {
     let sql = 'SELECT * FROM entries WHERE is_deleted = 0';
     const params: (string | number)[] = [];
 
@@ -207,12 +207,12 @@ class EntryServiceImpl implements EntryService {
     return rows.map(row => mapToEntry(row));
   }
 
-  async getEntryCount(): Promise<number> {
+  getEntryCount(): number {
     const row = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM entries WHERE is_deleted = 0');
     return row?.count ?? 0;
   }
 
-  async getDailyEntryCount(date: string): Promise<number> {
+  getDailyEntryCount(date: string): number {
     const dayStart = new Date(date).getTime();
     const row = db.getFirstSync<{ count: number }>(
       'SELECT COUNT(*) as count FROM entries WHERE is_deleted = 0 AND created_at >= ? AND created_at < ?',

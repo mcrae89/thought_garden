@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useGardenStore } from '@/stores/garden-store';
 import { modalStyles } from './styles';
@@ -52,8 +52,12 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
 
   async function handlePlant(seed: SeedData) {
     if (plotIndex === null) return;
-    await plantSeed(seed.id, plotIndex, userId, tier);
-    onClose();
+    try {
+      await plantSeed(seed.id, plotIndex, userId, tier);
+      onClose();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not plant seed');
+    }
   }
 
   return (
