@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAuthInit } from '@/hooks/use-auth-init';
+import { useSyncOnLogin } from '@/hooks/use-sync';
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -11,6 +12,7 @@ export default function RootLayout() {
   const navigationState = useRootNavigationState();
 
   useAuthInit();
+  useSyncOnLogin();
 
   useEffect(() => {
     if (isLoading || !navigationState?.key) return;

@@ -10,4 +10,7 @@ export interface SyncService {
   startSync(): Promise<SyncResult>;
   getStatus(): SyncStatus;
   onConnectivityChange(connected: boolean): void;
+  onSyncComplete: (() => void) | null;
 }
+
+export { syncService } from './sync-service';

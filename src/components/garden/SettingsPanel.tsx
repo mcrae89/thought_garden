@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { authService } from '@/modules/auth';
 import { modalStyles } from './styles';
@@ -14,6 +15,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       // signOut failure is non-fatal; clear session regardless
     } finally {
       clearSession();
+      await SecureStore.deleteItemAsync('sync_last_pulled_at');
       onClose();
     }
   }
