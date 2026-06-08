@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { db } from '@/database';
 
 export interface SeedData {
   id: string;
@@ -16,6 +17,7 @@ interface SeedState {
   seeds: SeedData[];
   isLoading: boolean;
   setSeeds: (seeds: SeedData[]) => void;
+  refreshSeeds: () => void;
 }
 
 export const useSeedStore = create<SeedState>()(
@@ -24,6 +26,10 @@ export const useSeedStore = create<SeedState>()(
       seeds: [],
       isLoading: true,
       setSeeds: (seeds) => set({ seeds, isLoading: false }),
+      refreshSeeds: () => {
+        const seeds = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE is_planted = 0');
+        set({ seeds, isLoading: false });
+      },
     }),
     { name: 'seed-store', enabled: __DEV__ },
   ),
