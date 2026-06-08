@@ -8,9 +8,11 @@ export interface SyncResult {
 
 export interface SyncService {
   startSync(): Promise<SyncResult>;
+  scheduleSync(): void;
   getStatus(): SyncStatus;
   onConnectivityChange(connected: boolean): void;
   onSyncComplete: (() => void) | null;
+  onConflictDetected: ((resolve: (choice: 'local' | 'server') => void) => void) | null;
 }
 
 export { syncService } from './sync-service';

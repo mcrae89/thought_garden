@@ -4,8 +4,15 @@ import { entryService } from '@/modules/entries';
 import { achievementEngine, buildAchievementContext } from '@/modules/achievements';
 import { gardenService } from '@/modules/garden';
 import { useNotificationStore } from '@/stores/notification-store';
+import { syncService } from '@/modules/sync';
 import type { Entry } from '@/modules/entries';
 import type { Emotion, Tier } from '@/shared/types';
+
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSync() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncTimer = null; syncService.scheduleSync(); }, 2000);
+}
 
 interface EntryState {
   entries: Entry[];
@@ -34,16 +41,19 @@ export const useEntryStore = create<EntryState>()(
           const gardenEvent = achievementEngine.evaluateGardenEvent({ type: 'first-bloom', seedEmotion: entry.primaryEmotion, userId });
           if (gardenEvent) addNotification(gardenEvent);
         }
+        debouncedSync();
         return entry;
       },
       editEntry: async (id, content, primaryEmotion, secondaryEmotions, userId, tier) => {
         const entry = entryService.editEntry(id, content, primaryEmotion, secondaryEmotions, userId, tier);
         set((state) => ({ entries: state.entries.map((e) => e.id === id ? entry : e) }));
+        debouncedSync();
         return entry;
       },
       deleteEntry: async (id, userId) => {
         entryService.deleteEntry(id, userId);
         set((state) => ({ entries: state.entries.filter((e) => e.id !== id) }));
+        debouncedSync();
       },
     }),
     { name: 'entry-store', enabled: __DEV__ },

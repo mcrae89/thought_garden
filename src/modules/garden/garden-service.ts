@@ -102,10 +102,10 @@ function createGardenService(): GardenService {
 
       db.withTransactionSync(() => {
         db.runSync(
-          'INSERT INTO plants (id, user_id, seed_id, emotion, color_variation, growth_stage, location, plot_position, planted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [plantId, userId, seedId, seed.emotion, seed.color_variation, 'seed', 'garden', plotIndex, plantedAt],
+          'INSERT INTO plants (id, user_id, seed_id, emotion, color_variation, growth_stage, location, plot_position, planted_at, last_modified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [plantId, userId, seedId, seed.emotion, seed.color_variation, 'seed', 'garden', plotIndex, plantedAt, plantedAt],
         );
-        db.runSync('UPDATE seeds SET is_planted = 1 WHERE id = ?', [seedId]);
+        db.runSync('UPDATE seeds SET is_planted = 1, last_modified_at = ? WHERE id = ?', [plantedAt, seedId]);
       });
 
       return {
@@ -134,7 +134,7 @@ function createGardenService(): GardenService {
         throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: gardenPlants.length });
       }
 
-      db.runSync('UPDATE plants SET plot_position = ? WHERE id = ?', [toPlotIndex, plantId]);
+      db.runSync('UPDATE plants SET plot_position = ?, last_modified_at = ? WHERE id = ?', [toPlotIndex, now(), plantId]);
     },
 
     moveToGreenhouse(plantId: string, userId: string, tier: Tier): void {
@@ -150,7 +150,7 @@ function createGardenService(): GardenService {
         throwAppError({ type: 'capacity', resource: 'greenhouse', current: greenhousePlants.length, max });
       }
 
-      db.runSync('UPDATE plants SET location = ?, plot_position = NULL WHERE id = ?', ['greenhouse', plantId]);
+      db.runSync('UPDATE plants SET location = ?, plot_position = NULL, last_modified_at = ? WHERE id = ?', ['greenhouse', now(), plantId]);
     },
 
     moveFromGreenhouse(plantId: string, plotIndex: number, userId: string): void {
@@ -164,7 +164,7 @@ function createGardenService(): GardenService {
         throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: gardenPlants.length });
       }
 
-      db.runSync('UPDATE plants SET location = ?, plot_position = ? WHERE id = ?', ['garden', plotIndex, plantId]);
+      db.runSync('UPDATE plants SET location = ?, plot_position = ?, last_modified_at = ? WHERE id = ?', ['garden', plotIndex, now(), plantId]);
     },
 
     revertToSeed(plantId: string, userId: string): void {
@@ -178,9 +178,10 @@ function createGardenService(): GardenService {
       );
 
       db.withTransactionSync(() => {
+        const revertedAt = now();
         db.runSync(
-          'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, NULL, ?, ?, ?, ?, 0)',
-          [generateId(), userId, originalSeed?.source_achievement_id ?? null, plant.emotion, plant.color_variation, now()],
+          'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted, last_modified_at) VALUES (?, ?, NULL, ?, ?, ?, ?, 0, ?)',
+          [generateId(), userId, originalSeed?.source_achievement_id ?? null, plant.emotion, plant.color_variation, revertedAt, revertedAt],
         );
         db.runSync('DELETE FROM plants WHERE id = ?', [plantId]);
       });
@@ -205,8 +206,8 @@ function createGardenService(): GardenService {
         db.withTransactionSync(() => {
           for (const { plantId, newStage } of advances) {
             db.runSync(
-              'UPDATE plants SET growth_stage = ?, last_growth_date = ?, last_watered_at = ? WHERE id = ?',
-              [newStage, entryDate, wateredAt, plantId],
+              'UPDATE plants SET growth_stage = ?, last_growth_date = ?, last_watered_at = ?, last_modified_at = ? WHERE id = ?',
+              [newStage, entryDate, wateredAt, wateredAt, plantId],
             );
           }
         });

@@ -102,17 +102,17 @@ class EntryServiceImpl implements EntryService {
 
     db.withTransactionSync(() => {
       db.runSync(
-        'INSERT INTO entries (id, user_id, content, primary_emotion, word_count, created_at, is_deleted) VALUES (?, ?, ?, ?, ?, ?, 0)',
-        [entryId, userId, trimmedContent, primaryEmotion, wordCount, createdAt],
+        'INSERT INTO entries (id, user_id, content, primary_emotion, word_count, created_at, is_deleted, last_modified_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
+        [entryId, userId, trimmedContent, primaryEmotion, wordCount, createdAt, createdAt],
       );
       db.runSync(
-        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
-        [generateId(), entryId, primaryEmotion, 'primary', 0],
+        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order", last_modified_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [generateId(), entryId, primaryEmotion, 'primary', 0, createdAt],
       );
       secondaryEmotions.forEach((emotion, i) => {
         db.runSync(
-          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
-          [generateId(), entryId, emotion, 'secondary', i + 1],
+          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order", last_modified_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [generateId(), entryId, emotion, 'secondary', i + 1, createdAt],
         );
       });
     });
@@ -147,18 +147,18 @@ class EntryServiceImpl implements EntryService {
 
     db.withTransactionSync(() => {
       db.runSync(
-        'UPDATE entries SET content = ?, primary_emotion = ?, word_count = ?, modified_at = ? WHERE id = ?',
-        [trimmedContent, primaryEmotion, wordCount, modifiedAt, id],
+        'UPDATE entries SET content = ?, primary_emotion = ?, word_count = ?, modified_at = ?, last_modified_at = ? WHERE id = ?',
+        [trimmedContent, primaryEmotion, wordCount, modifiedAt, modifiedAt, id],
       );
       db.runSync('DELETE FROM entry_emotions WHERE entry_id = ?', [id]);
       db.runSync(
-        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
-        [generateId(), id, primaryEmotion, 'primary', 0],
+        'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order", last_modified_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [generateId(), id, primaryEmotion, 'primary', 0, modifiedAt],
       );
       secondaryEmotions.forEach((emotion, i) => {
         db.runSync(
-          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order") VALUES (?, ?, ?, ?, ?)',
-          [generateId(), id, emotion, 'secondary', i + 1],
+          'INSERT INTO entry_emotions (id, entry_id, emotion, type, "order", last_modified_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [generateId(), id, emotion, 'secondary', i + 1, modifiedAt],
         );
       });
     });
@@ -181,7 +181,7 @@ class EntryServiceImpl implements EntryService {
     const notFoundError: AppError = { type: 'validation', field: 'id', message: 'Entry not found' };
     if (!entry || entry.user_id !== userId || entry.is_deleted === 1) throw notFoundError;
 
-    db.runSync('UPDATE entries SET is_deleted = 1 WHERE id = ?', [id]);
+    db.runSync('UPDATE entries SET is_deleted = 1, last_modified_at = ? WHERE id = ?', [now(), id]);
   }
 
   getEntries(options: { userId: string; limit?: number; offset?: number; date?: string }): Entry[] {

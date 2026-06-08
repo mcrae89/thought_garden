@@ -4,6 +4,7 @@ import { gardenService } from '@/modules/garden';
 import { achievementEngine } from '@/modules/achievements';
 import { useNotificationStore } from '@/stores/notification-store';
 import { useSeedStore } from '@/stores/seed-store';
+import { syncService } from '@/modules/sync';
 import { db } from '@/database';
 import { EMOTIONS } from '@/shared/types';
 import type { Plant } from '@/modules/garden';
@@ -14,6 +15,12 @@ import { getMaxPlots } from '@/modules/garden/garden-service';
 function refreshSeeds(userId: string) {
   const rows = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE user_id = ? AND is_planted = 0', [userId]);
   useSeedStore.getState().setSeeds(rows);
+}
+
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSync() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncTimer = null; syncService.scheduleSync(); }, 2000);
 }
 
 interface GardenState {
@@ -49,6 +56,7 @@ export const useGardenStore = create<GardenState>()(
           const r = achievementEngine.evaluateGardenEvent({ type: 'all-emotions', seedEmotion: plant.emotion, userId });
           if (r) addNotification(r);
         }
+        debouncedSync();
         return plant;
       },
       movePlant: async (plantId, toPlotIndex, userId) => {
@@ -56,27 +64,32 @@ export const useGardenStore = create<GardenState>()(
         set((state) => ({
           plants: state.plants.map((p) => p.id === plantId ? { ...p, plotPosition: toPlotIndex } : p),
         }));
+        debouncedSync();
       },
       moveToGreenhouse: async (plantId, userId, tier) => {
         await gardenService.moveToGreenhouse(plantId, userId, tier);
         set((state) => ({
           plants: state.plants.map((p) => p.id === plantId ? { ...p, location: 'greenhouse' as const, plotPosition: null } : p),
         }));
+        debouncedSync();
       },
       moveFromGreenhouse: async (plantId, plotIndex, userId) => {
         await gardenService.moveFromGreenhouse(plantId, plotIndex, userId);
         set((state) => ({
           plants: state.plants.map((p) => p.id === plantId ? { ...p, location: 'garden' as const, plotPosition: plotIndex } : p),
         }));
+        debouncedSync();
       },
       revertToSeed: async (plantId, userId) => {
         await gardenService.revertToSeed(plantId, userId);
         set((state) => ({ plants: state.plants.filter((p) => p.id !== plantId) }));
         refreshSeeds(userId);
+        debouncedSync();
       },
       waterGarden: async (userId, entryDate) => {
         gardenService.waterGarden(userId, entryDate);
         set({ plants: gardenService.getGarden(userId) });
+        debouncedSync();
       },
     }),
     { name: 'garden-store', enabled: __DEV__ },

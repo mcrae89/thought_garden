@@ -13,6 +13,7 @@ import { PlantDetailSheet } from '@/components/garden/PlantDetailSheet';
 import { SettingsPanel } from '@/components/garden/SettingsPanel';
 import { NotificationsPanel } from '@/components/garden/NotificationsPanel';
 import { TilemapRenderer } from '@/components/garden/TilemapRenderer';
+import { ConflictModal } from '@/components/garden/ConflictModal';
 import { useGardenSubscription } from '@/hooks/use-garden-subscription';
 import { useEntrySubscription } from '@/hooks/use-entry-subscription';
 import { useSeedSubscription } from '@/hooks/use-seed-subscription';
@@ -240,6 +241,7 @@ export default function GardenWorldScreen() {
       <Modal visible={activeModal === 'plantDetail'} animationType="slide" transparent onRequestClose={() => setActiveModal(null)}>
         <PlantDetailSheet plant={selectedPlant} userId={userId} tier={tier} onClose={() => setActiveModal(null)} />
       </Modal>
+      <ConflictModal />
     </View>
   );
 }
