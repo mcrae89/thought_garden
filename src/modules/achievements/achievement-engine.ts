@@ -299,12 +299,12 @@ class AchievementEngineImpl implements AchievementEngine {
           const seedId = generateId();
           const earnedAt = now();
           db.runSync(
-            'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)',
-            [achievementId, entry.userId, result.achievementType, result.achievementKey, entry.id, earnedAt],
+            'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active, last_modified_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)',
+            [achievementId, entry.userId, result.achievementType, result.achievementKey, entry.id, earnedAt, earnedAt],
           );
           db.runSync(
-            'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, ?, ?, ?, NULL, ?, 0)',
-            [seedId, entry.userId, entry.id, achievementId, result.seedEmotion, earnedAt],
+            'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted, last_modified_at) VALUES (?, ?, ?, ?, ?, NULL, ?, 0, ?)',
+            [seedId, entry.userId, entry.id, achievementId, result.seedEmotion, earnedAt, earnedAt],
           );
         }
       });
@@ -328,12 +328,12 @@ class AchievementEngineImpl implements AchievementEngine {
 
     db.withTransactionSync(() => {
       db.runSync(
-        'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active) VALUES (?, ?, ?, ?, NULL, ?, 1)',
-        [achievementId, event.userId, result.achievementType, result.achievementKey, earnedAt],
+        'INSERT INTO achievement_records (id, user_id, achievement_type, achievement_key, trigger_entry_id, earned_at, is_active, last_modified_at) VALUES (?, ?, ?, ?, NULL, ?, 1, ?)',
+        [achievementId, event.userId, result.achievementType, result.achievementKey, earnedAt, earnedAt],
       );
       db.runSync(
-        'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted) VALUES (?, ?, NULL, ?, ?, NULL, ?, 0)',
-        [seedId, event.userId, achievementId, result.seedEmotion, earnedAt],
+        'INSERT INTO seeds (id, user_id, source_entry_id, source_achievement_id, emotion, color_variation, earned_at, is_planted, last_modified_at) VALUES (?, ?, NULL, ?, ?, NULL, ?, 0, ?)',
+        [seedId, event.userId, achievementId, result.seedEmotion, earnedAt, earnedAt],
       );
     });
 

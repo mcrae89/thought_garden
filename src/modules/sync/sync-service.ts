@@ -71,7 +71,7 @@ export class SyncServiceImpl implements SyncService {
       console.log('[Sync] starting, lastPulledAt:', lastPulledAt);
 
       // --- BUILD LOCAL CHANGES ---
-      const changes: Record<string, { updated: unknown[]; deleted: string[] }> = {
+      const changes: Record<string, { updated: unknown[]; deleted: unknown[] }> = {
         entries: { updated: [], deleted: [] },
         entry_emotions: { updated: [], deleted: [] },
         seeds: { updated: [], deleted: [] },
@@ -83,7 +83,7 @@ export class SyncServiceImpl implements SyncService {
       const entries = db.getAllSync<Record<string, unknown>>('SELECT * FROM entries WHERE last_modified_at > ?', [lastPulledAt]);
       for (const row of entries) {
         if (row['is_deleted'] === 1) {
-          changes.entries.deleted.push(row['id'] as string);
+          changes.entries.deleted.push({ id: row['id'] as string });
         } else {
           changes.entries.updated.push({
             ...row,
@@ -109,7 +109,8 @@ export class SyncServiceImpl implements SyncService {
 
       // --- FIX #3: PUSH FIRST (even on full sync) ---
       if (pushed > 0) {
-        const { error: pushError } = await supabase.rpc('push_changes', { changes, last_pulled_at: lastPulledAt });
+        const payload = JSON.parse(JSON.stringify(changes));
+        const { error: pushError } = await supabase.rpc('push_changes', { changes: payload, last_pulled_at: lastPulledAt });
         if (pushError) throw pushError;
         this.lastPushAt = Date.now();
       }

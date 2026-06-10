@@ -74,7 +74,7 @@ function fetchGreenhousePlants(userId: string): PlantRow[] {
 function createGardenService(): GardenService {
   return {
     getGarden(userId: string): Plant[] {
-      const rows = fetchGardenPlants(userId);
+      const rows = db.getAllSync<PlantRow>('SELECT * FROM plants WHERE user_id = ?', [userId]);
       return rows.map(toPlant);
     },
 
