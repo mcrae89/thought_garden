@@ -32,7 +32,13 @@ function hasConflict(serverRows: Record<string, unknown>[], tableName: string, p
     const local = db.getFirstSync<{ last_modified_at: number }>(
       `SELECT last_modified_at FROM ${tableName} WHERE id = ?`, [row.id as string],
     );
-    if (local && local.last_modified_at > lastPulledAt && toMs(row.last_modified_at as string)! > local.last_modified_at) return true;
+    if (!local) continue; // New row from server — not a conflict
+    // Only a conflict if server modified a row that we ALSO modified locally,
+    // but we did NOT push it (i.e. it's not in pushedIds — already filtered above).
+    // If local was modified since last pull, we already pushed it, so skip.
+    if (local.last_modified_at > lastPulledAt) continue;
+    const serverTs = toMs(row.last_modified_at as string) ?? 0;
+    if (serverTs > lastPulledAt && serverTs !== local.last_modified_at) return true;
   }
   return false;
 }

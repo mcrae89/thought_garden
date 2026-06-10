@@ -119,7 +119,7 @@ export default function GardenWorldScreen() {
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const userId = session?.userId ?? '';
-  const mapData = tier === 'free' ? FREE_MAP : PAID_MAP;
+  const mapData = tier !== 'paid' ? FREE_MAP : PAID_MAP;
   const tileSize = Math.floor(Math.min(screenWidth / mapData.width, screenHeight / mapData.height));
   const soilPlots = useMemo(() => getSoilPlots(mapData, tileSize), [mapData, tileSize]);
 

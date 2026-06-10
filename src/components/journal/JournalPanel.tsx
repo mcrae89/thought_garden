@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Pressable } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEntryStore } from '@/stores/entry-store';
 import { entryService } from '@/modules/entries';
@@ -64,64 +64,69 @@ export function JournalPanel({ onClose }: JournalPanelProps) {
 
   if (view === 'create' || view === 'edit') {
     return (
-      <View style={styles.sheet}>
-        <Text style={styles.title}>{editingEntry ? 'Edit Entry' : 'New Entry'}</Text>
-        <EntryForm
-          initialEntry={editingEntry ?? undefined}
-          tier={tier}
-          dailyCount={dailyCount}
-          dailyLimit={dailyLimit}
-          onSubmit={handleSubmit}
-          onCancel={() => { setView('list'); setEditingEntry(null); }}
-        />
-      </View>
+      <Pressable style={styles.backdrop} onPress={() => { setView('list'); setEditingEntry(null); }}>
+        <Pressable style={styles.sheet}>
+          <Text style={styles.title}>{editingEntry ? 'Edit Entry' : 'New Entry'}</Text>
+          <EntryForm
+            initialEntry={editingEntry ?? undefined}
+            tier={tier}
+            dailyCount={dailyCount}
+            dailyLimit={dailyLimit}
+            onSubmit={handleSubmit}
+            onCancel={() => { setView('list'); setEditingEntry(null); }}
+          />
+        </Pressable>
+      </Pressable>
     );
   }
 
   return (
-    <View style={styles.sheet}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Journal</Text>
-        <TouchableOpacity onPress={onClose} accessibilityLabel="Close journal">
-          <Text style={styles.closeText}>✕</Text>
+    <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable style={styles.sheet}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Journal</Text>
+          <TouchableOpacity onPress={onClose} accessibilityLabel="Close journal">
+            <Text style={styles.closeText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          {entries.length === 0 && <Text style={styles.emptyText}>No entries yet. Start writing!</Text>}
+          {entries.map((entry) => (
+            <EntryListItem
+              key={entry.id}
+              entry={entry}
+              onPress={() => { setEditingEntry(entry); setView('edit'); }}
+              onDelete={() => setDeleteTargetId(entry.id)}
+            />
+          ))}
+        </ScrollView>
+
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => { setEditingEntry(null); setView('create'); }}
+          accessibilityLabel="Create new entry"
+        >
+          <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
-      </View>
 
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-        {entries.length === 0 && <Text style={styles.emptyText}>No entries yet. Start writing!</Text>}
-        {entries.map((entry) => (
-          <EntryListItem
-            key={entry.id}
-            entry={entry}
-            onPress={() => { setEditingEntry(entry); setView('edit'); }}
-            onDelete={() => setDeleteTargetId(entry.id)}
-          />
-        ))}
-      </ScrollView>
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => { setEditingEntry(null); setView('create'); }}
-        accessibilityLabel="Create new entry"
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
-
-      <DeleteConfirmDialog
-        visible={deleteTargetId !== null}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTargetId(null)}
-      />
-    </View>
+        <DeleteConfirmDialog
+          visible={deleteTargetId !== null}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTargetId(null)}
+        />
+      </Pressable>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: colors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

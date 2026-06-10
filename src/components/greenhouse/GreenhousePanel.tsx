@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth-store';
 import { useGardenStore } from '@/stores/garden-store';
@@ -55,69 +55,72 @@ export function GreenhousePanel({ onClose }: GreenhousePanelProps) {
   }
 
   return (
-    <View style={styles.sheet}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Greenhouse</Text>
-        <Text style={styles.capacity}>{storedPlants.length}/{capacity}</Text>
-        <TouchableOpacity onPress={onClose} accessibilityLabel="Close greenhouse">
-          <Text style={styles.closeText}>✕</Text>
-        </TouchableOpacity>
-      </View>
+    <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable style={styles.sheet}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Greenhouse</Text>
+          <Text style={styles.capacity}>{storedPlants.length}/{capacity}</Text>
+          <TouchableOpacity onPress={onClose} accessibilityLabel="Close greenhouse">
+            <Text style={styles.closeText}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-      {isFull && (
-        <Text style={styles.fullMessage}>
-          Greenhouse is full. Revert a plant to seed to make space.
-        </Text>
-      )}
+        {isFull && (
+          <Text style={styles.fullMessage}>
+            Greenhouse is full. Revert a plant to seed to make space.
+          </Text>
+        )}
 
-      <ScrollView contentContainerStyle={styles.grid}>
-        {storedPlants.map((plant) => {
-          const sprite = plantVisualService.getPlantSprite(plant.emotion, plant.growthStage, plant.colorVariation ?? null, 'greenhouse');
-          return (
-            <View key={plant.id} style={styles.plantCard}>
-              <Image
-                source={{ uri: sprite.uri }}
-                style={styles.plantSprite}
-                contentFit="none"
-                accessibilityLabel={`${plant.emotion} plant, ${plant.growthStage}`}
-              />
-              <Text style={styles.plantEmotion}>{plant.emotion}</Text>
-              <Text style={styles.plantStage}>{plant.growthStage}</Text>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => handleMoveToGarden(plant)}
-                accessibilityLabel={`Move ${plant.emotion} plant to garden`}
-              >
-                <Text style={styles.actionText}>→ Garden</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.revertButton}
-                onPress={() => setRevertTarget(plant)}
-                accessibilityLabel={`Revert ${plant.emotion} plant to seed`}
-              >
-                <Text style={styles.revertText}>Revert</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-        {storedPlants.length === 0 && <Text style={styles.emptyText}>Greenhouse is empty</Text>}
-      </ScrollView>
+        <ScrollView contentContainerStyle={styles.grid}>
+          {storedPlants.map((plant) => {
+            const sprite = plantVisualService.getPlantSprite(plant.emotion, plant.growthStage, plant.colorVariation ?? null, 'greenhouse');
+            return (
+              <View key={plant.id} style={styles.plantCard}>
+                <Image
+                  source={{ uri: sprite.uri }}
+                  style={styles.plantSprite}
+                  contentFit="none"
+                  accessibilityLabel={`${plant.emotion} plant, ${plant.growthStage}`}
+                />
+                <Text style={styles.plantEmotion}>{plant.emotion}</Text>
+                <Text style={styles.plantStage}>{plant.growthStage}</Text>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleMoveToGarden(plant)}
+                  accessibilityLabel={`Move ${plant.emotion} plant to garden`}
+                >
+                  <Text style={styles.actionText}>→ Garden</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.revertButton}
+                  onPress={() => setRevertTarget(plant)}
+                  accessibilityLabel={`Revert ${plant.emotion} plant to seed`}
+                >
+                  <Text style={styles.revertText}>Revert</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+          {storedPlants.length === 0 && <Text style={styles.emptyText}>Greenhouse is empty</Text>}
+        </ScrollView>
 
-      <DeleteConfirmDialog
-        visible={revertTarget !== null}
-        onConfirm={handleRevert}
-        onCancel={() => setRevertTarget(null)}
-      />
-    </View>
+        <DeleteConfirmDialog
+          visible={revertTarget !== null}
+          onConfirm={handleRevert}
+          onCancel={() => setRevertTarget(null)}
+        />
+      </Pressable>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: colors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

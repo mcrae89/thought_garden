@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useGardenStore } from '@/stores/garden-store';
 import { modalStyles } from './styles';
@@ -61,36 +61,38 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
   }
 
   return (
-    <View style={modalStyles.modalSheet}>
-      <Text style={modalStyles.modalTitle}>Seed Inventory</Text>
-      <View style={styles.seedGrid}>
-        {plotIndex === null && (
-          <Text style={modalStyles.emptyText}>Tap an empty plot in the garden first, then select a seed.</Text>
-        )}
-        {seeds.map((seed) => (
-          <TouchableOpacity
-            key={seed.id}
-            style={[styles.seedItem, plotIndex === null && styles.seedItemDisabled]}
-            onPress={() => handlePlant(seed)}
-            disabled={plotIndex === null}
-            accessibilityLabel={`Plant ${seed.emotion} seed`}
-            accessibilityState={{ disabled: plotIndex === null }}
-          >
-            <Image
-              source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed.png')}
-              style={styles.seedSprite}
-              contentFit="contain"
-              accessibilityLabel={`${seed.emotion} seed bag`}
-            />
-            <Text style={styles.seedLabel}>{seed.emotion}</Text>
-          </TouchableOpacity>
-        ))}
-        {seeds.length === 0 && <Text style={modalStyles.emptyText}>No seeds available</Text>}
-      </View>
-      <TouchableOpacity style={modalStyles.closeButton} onPress={onClose} accessibilityLabel="Close">
-        <Text style={modalStyles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
+    <Pressable style={modalStyles.backdrop} onPress={onClose}>
+      <Pressable style={modalStyles.modalSheet}>
+        <Text style={modalStyles.modalTitle}>Seed Inventory</Text>
+        <View style={styles.seedGrid}>
+          {plotIndex === null && (
+            <Text style={modalStyles.emptyText}>Tap an empty plot in the garden first, then select a seed.</Text>
+          )}
+          {seeds.map((seed) => (
+            <TouchableOpacity
+              key={seed.id}
+              style={[styles.seedItem, plotIndex === null && styles.seedItemDisabled]}
+              onPress={() => handlePlant(seed)}
+              disabled={plotIndex === null}
+              accessibilityLabel={`Plant ${seed.emotion} seed`}
+              accessibilityState={{ disabled: plotIndex === null }}
+            >
+              <Image
+                source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed.png')}
+                style={styles.seedSprite}
+                contentFit="contain"
+                accessibilityLabel={`${seed.emotion} seed bag`}
+              />
+              <Text style={styles.seedLabel}>{seed.emotion}</Text>
+            </TouchableOpacity>
+          ))}
+          {seeds.length === 0 && <Text style={modalStyles.emptyText}>No seeds available</Text>}
+        </View>
+        <TouchableOpacity style={modalStyles.closeButton} onPress={onClose} accessibilityLabel="Close">
+          <Text style={modalStyles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </Pressable>
+    </Pressable>
   );
 }
 

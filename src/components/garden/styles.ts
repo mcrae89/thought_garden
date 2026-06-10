@@ -2,11 +2,12 @@ import { StyleSheet } from 'react-native';
 import { colors, spacing } from '@/theme/tokens';
 
 export const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
   modalSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: colors.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

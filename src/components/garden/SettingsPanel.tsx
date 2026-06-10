@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { authService } from '@/modules/auth';
@@ -21,19 +21,21 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <View style={modalStyles.modalSheet}>
-      <Text style={modalStyles.modalTitle}>Settings</Text>
-      <Text style={modalStyles.detailText}>Tier: {tier}</Text>
-      <TouchableOpacity
-        style={modalStyles.actionButton}
-        onPress={handleSignOut}
-        accessibilityLabel="Sign out"
-      >
-        <Text style={modalStyles.actionButtonText}>Sign Out</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={modalStyles.closeButton} onPress={onClose} accessibilityLabel="Close">
-        <Text style={modalStyles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
+    <Pressable style={modalStyles.backdrop} onPress={onClose}>
+      <Pressable style={modalStyles.modalSheet}>
+        <Text style={modalStyles.modalTitle}>Settings</Text>
+        <Text style={modalStyles.detailText}>Tier: {tier}</Text>
+        <TouchableOpacity
+          style={modalStyles.actionButton}
+          onPress={handleSignOut}
+          accessibilityLabel="Sign out"
+        >
+          <Text style={modalStyles.actionButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={modalStyles.closeButton} onPress={onClose} accessibilityLabel="Close">
+          <Text style={modalStyles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </Pressable>
+    </Pressable>
   );
 }

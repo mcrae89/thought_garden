@@ -35,6 +35,10 @@ export function useSyncOnLogin() {
       useSyncStore.getState().showConflict(resolve);
     };
 
+    // Load tier from local DB immediately
+    const stats = db.getFirstSync<{ tier: string }>('SELECT tier FROM user_stats WHERE user_id = ?', [userId]);
+    if (stats?.tier) useAuthStore.getState().setTier(stats.tier as 'free' | 'paid');
+
     // Sync on login
     syncService.startSync().catch((err) => console.warn('[Sync] initial sync failed:', err));
 
