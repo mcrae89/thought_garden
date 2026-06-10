@@ -24,7 +24,7 @@ export interface EntryService {
   createEntry(content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Entry;
   editEntry(id: string, content: string, primaryEmotion: Emotion, secondaryEmotions: Emotion[], userId: string, tier: Tier): Entry;
   deleteEntry(id: string, userId: string): void;
-  getEntries(options: { limit?: number; offset?: number; date?: string }): Entry[];
+  getEntries(options: { userId: string; limit?: number; offset?: number; date?: string }): Entry[];
   getEntryCount(): number;
   getDailyEntryCount(date: string): number;
 }

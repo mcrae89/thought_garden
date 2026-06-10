@@ -1,4 +1,11 @@
-jest.mock('@/database', () => ({ db: {} }));
+jest.mock('@/database', () => ({
+  db: {
+    getAllSync: jest.fn(() => []),
+    getFirstSync: jest.fn(() => null),
+    runSync: jest.fn(),
+    withTransactionSync: jest.fn((fn: () => void) => fn()),
+  },
+}));
 jest.mock('@/modules/sync/supabase-client', () => ({
   supabase: { rpc: jest.fn(), from: jest.fn(() => ({ select: jest.fn(() => ({ limit: jest.fn() })) })) },
 }));
@@ -37,11 +44,15 @@ describe('Sync flow integration', () => {
     expect(entryService.createEntry).toHaveBeenCalledWith('offline entry', 'happy', [], 'user-1', 'free');
   });
 
-  it('startSync returns no-op result while disabled', async () => {
+  it('startSync returns no-op result when conflict pending', async () => {
+    const { useSyncStore } = require('@/stores/sync-store');
+    useSyncStore.setState({ conflictPending: true });
+
     const syncService = new SyncServiceImpl();
     const result = await syncService.startSync();
 
     expect(result).toEqual({ pushed: 0, pulled: 0, conflicts: 0 });
+    useSyncStore.setState({ conflictPending: false });
   });
 
   it('local data still accessible after sync stub', async () => {

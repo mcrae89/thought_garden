@@ -1,18 +1,12 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { entryService } from '@/modules/entries';
-import { achievementEngine, buildAchievementContext } from '@/modules/achievements';
+import { achievementEngine, buildAchievementContext, updateUserStats } from '@/modules/achievements';
 import { gardenService } from '@/modules/garden';
 import { useNotificationStore } from '@/stores/notification-store';
-import { syncService } from '@/modules/sync';
+import { debouncedSync } from '@/modules/sync/sync-scheduler';
 import type { Entry } from '@/modules/entries';
 import type { Emotion, Tier } from '@/shared/types';
-
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
-function debouncedSync() {
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => { syncTimer = null; syncService.scheduleSync(); }, 2000);
-}
 
 interface EntryState {
   entries: Entry[];
@@ -32,6 +26,7 @@ export const useEntryStore = create<EntryState>()(
       createEntry: async (content, primaryEmotion, secondaryEmotions, userId, tier) => {
         const entry = entryService.createEntry(content, primaryEmotion, secondaryEmotions, userId, tier);
         set((state) => ({ entries: [entry, ...state.entries] }));
+        updateUserStats(userId, entry);
         const context = buildAchievementContext(userId, entry);
         const results = achievementEngine.evaluateEntry(entry, context);
         const { addNotification } = useNotificationStore.getState();

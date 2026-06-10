@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSeedStore } from '@/stores/seed-store';
 import { useGardenStore } from '@/stores/garden-store';
@@ -7,22 +8,16 @@ import { useSyncStore } from '@/stores/sync-store';
 import { gardenService } from '@/modules/garden';
 import { entryService } from '@/modules/entries';
 import { syncService } from '@/modules/sync';
-import { supabase } from '@/modules/sync/supabase-client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import { db } from '@/database';
 
 export function useSyncOnLogin() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const userId = useAuthStore((s) => s.session?.userId ?? '');
   const synced = useRef(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       synced.current = false;
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
       return;
     }
     if (synced.current) return;
@@ -31,20 +26,23 @@ export function useSyncOnLogin() {
     syncService.onSyncComplete = () => {
       useSeedStore.getState().refreshSeeds();
       useGardenStore.getState().setPlants(gardenService.getGarden(userId));
-      useEntryStore.getState().setEntries(entryService.getEntries({}));
+      useEntryStore.getState().setEntries(entryService.getEntries({ userId }));
+      const stats = db.getFirstSync<{ tier: string }>('SELECT tier FROM user_stats WHERE user_id = ?', [userId]);
+      if (stats?.tier) useAuthStore.getState().setTier(stats.tier as 'free' | 'paid');
     };
 
     syncService.onConflictDetected = (resolve) => {
       useSyncStore.getState().showConflict(resolve);
     };
 
+    // Sync on login
     syncService.startSync().catch((err) => console.warn('[Sync] initial sync failed:', err));
 
-    channelRef.current = supabase
-      .channel(`realtime:${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${userId}` }, () => syncService.scheduleSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'seeds', filter: `user_id=eq.${userId}` }, () => syncService.scheduleSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'plants', filter: `user_id=eq.${userId}` }, () => syncService.scheduleSync())
-      .subscribe();
+    // Sync on app resume (replaces Realtime subscription)
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') syncService.scheduleSync();
+    });
+
+    return () => subscription.remove();
   }, [isAuthenticated, userId]);
 }

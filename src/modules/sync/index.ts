@@ -9,6 +9,7 @@ export interface SyncResult {
 export interface SyncService {
   startSync(): Promise<SyncResult>;
   scheduleSync(): void;
+  scheduleSyncFromRemote(): void;
   getStatus(): SyncStatus;
   onConnectivityChange(connected: boolean): void;
   onSyncComplete: (() => void) | null;

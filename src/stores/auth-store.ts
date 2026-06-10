@@ -9,6 +9,7 @@ interface AuthState {
   isLoading: boolean;
   tier: Tier;
   setSession: (session: Session | null) => void;
+  setTier: (tier: Tier) => void;
   clearSession: () => void;
 }
 
@@ -21,6 +22,7 @@ export const useAuthStore = create<AuthState>()(
       tier: 'free',
       setSession: (session) =>
         set({ session, isAuthenticated: session !== null, isLoading: false }),
+      setTier: (tier) => set({ tier }),
       clearSession: () =>
         set({ session: null, isAuthenticated: false, isLoading: false, tier: 'free' }),
     }),

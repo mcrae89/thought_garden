@@ -4,7 +4,7 @@ import { gardenService } from '@/modules/garden';
 import { achievementEngine } from '@/modules/achievements';
 import { useNotificationStore } from '@/stores/notification-store';
 import { useSeedStore } from '@/stores/seed-store';
-import { syncService } from '@/modules/sync';
+import { debouncedSync } from '@/modules/sync/sync-scheduler';
 import { db } from '@/database';
 import { EMOTIONS } from '@/shared/types';
 import type { Plant } from '@/modules/garden';
@@ -15,12 +15,6 @@ import { getMaxPlots } from '@/modules/garden/garden-service';
 function refreshSeeds(userId: string) {
   const rows = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE user_id = ? AND is_planted = 0', [userId]);
   useSeedStore.getState().setSeeds(rows);
-}
-
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
-function debouncedSync() {
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => { syncTimer = null; syncService.scheduleSync(); }, 2000);
 }
 
 interface GardenState {

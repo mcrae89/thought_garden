@@ -232,6 +232,43 @@ export function buildAchievementContext(userId: string, _currentEntry: Entry): A
   };
 }
 
+// --- User stats updater ---
+
+export function updateUserStats(userId: string, entry: Entry): void {
+  const today = entry.createdAt.toISOString().slice(0, 10);
+  const stats = db.getFirstSync<UserStatsRow>('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
+  const timestamp = now();
+
+  if (!stats) {
+    db.runSync(
+      `INSERT INTO user_stats (id, user_id, total_entries, current_streak, last_entry_date, consecutive_same_emotion, last_emotion, tier, last_modified_at)
+       VALUES (?, ?, 1, 1, ?, 1, ?, 'free', ?)`,
+      [generateId(), userId, today, entry.primaryEmotion, timestamp],
+    );
+    return;
+  }
+
+  let streak = stats.current_streak;
+  if (stats.last_entry_date) {
+    const diff = calendarDayDiff(stats.last_entry_date, entry.createdAt);
+    if (diff === 1) streak++;
+    else if (diff > 1) streak = 1;
+    // diff === 0 means same day, keep streak unchanged
+  } else {
+    streak = 1;
+  }
+
+  const consecutiveSame = stats.last_emotion === entry.primaryEmotion
+    ? stats.consecutive_same_emotion + 1
+    : 1;
+
+  db.runSync(
+    `UPDATE user_stats SET total_entries = total_entries + 1, current_streak = ?, last_entry_date = ?,
+     consecutive_same_emotion = ?, last_emotion = ?, last_modified_at = ? WHERE id = ?`,
+    [streak, today, consecutiveSame, entry.primaryEmotion, timestamp, stats.id],
+  );
+}
+
 // --- Garden event key mapping ---
 
 const GARDEN_EVENT_KEYS: Record<GardenEvent['type'], string> = {

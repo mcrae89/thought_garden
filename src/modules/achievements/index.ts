@@ -41,7 +41,7 @@ export interface AchievementEngine {
 }
 
 export { achievementEngine } from './achievement-engine';
-export { buildAchievementContext, resolveTie, calendarDayDiff } from './achievement-engine';
+export { buildAchievementContext, resolveTie, calendarDayDiff, updateUserStats } from './achievement-engine';
 export {
   firstEntry,
   milestoneEntry,
