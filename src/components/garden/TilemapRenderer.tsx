@@ -6,14 +6,15 @@ import { TILE_IMAGES } from './tileRequires';
 interface TilemapRendererProps {
   mapData: TiledMap;
   tileSize?: number;
+  children?: React.ReactNode;
 }
 
-const NATIVE = 16;
+export const NATIVE_TILE = 16;
 
-export const TilemapRenderer = React.memo(function TilemapRenderer({ mapData, tileSize = 32 }: TilemapRendererProps) {
-  const scale = tileSize / NATIVE;
-  const nativeWidth = mapData.width * NATIVE;
-  const nativeHeight = mapData.height * NATIVE;
+export const TilemapRenderer = React.memo(function TilemapRenderer({ mapData, tileSize = 32, children }: TilemapRendererProps) {
+  const scale = tileSize / NATIVE_TILE;
+  const nativeWidth = mapData.width * NATIVE_TILE;
+  const nativeHeight = mapData.height * NATIVE_TILE;
 
   const tiles = useMemo(() => {
     const result: React.ReactElement[] = [];
@@ -30,10 +31,10 @@ export const TilemapRenderer = React.memo(function TilemapRenderer({ mapData, ti
             source={TILE_IMAGES[gid]}
             style={{
               position: 'absolute',
-              left: col * NATIVE,
-              top: row * NATIVE,
-              width: NATIVE,
-              height: NATIVE,
+              left: col * NATIVE_TILE,
+              top: row * NATIVE_TILE,
+              width: NATIVE_TILE,
+              height: NATIVE_TILE,
             }}
             resizeMode="stretch"
           />,
@@ -54,6 +55,7 @@ export const TilemapRenderer = React.memo(function TilemapRenderer({ mapData, ti
         }}
       >
         {tiles}
+        {children}
       </View>
     </View>
   );

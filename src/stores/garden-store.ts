@@ -10,7 +10,6 @@ import { EMOTIONS } from '@/shared/types';
 import type { Plant } from '@/modules/garden';
 import type { SeedData } from '@/stores/seed-store';
 import type { Tier } from '@/shared/types';
-import { getMaxPlots } from '@/modules/garden/garden-service';
 
 function refreshSeeds(userId: string) {
   const rows = db.getAllSync<SeedData>('SELECT * FROM seeds WHERE user_id = ? AND is_planted = 0', [userId]);
@@ -41,10 +40,6 @@ export const useGardenStore = create<GardenState>()(
         refreshSeeds(userId);
         const { addNotification } = useNotificationStore.getState();
         const allPlants = gardenService.getGarden(userId);
-        if (allPlants.length >= getMaxPlots(tier)) {
-          const r = achievementEngine.evaluateGardenEvent({ type: 'full-garden', seedEmotion: plant.emotion, userId });
-          if (r) addNotification(r);
-        }
         const emotions = new Set(allPlants.map((p) => p.emotion));
         if (emotions.size >= EMOTIONS.length) {
           const r = achievementEngine.evaluateGardenEvent({ type: 'all-emotions', seedEmotion: plant.emotion, userId });

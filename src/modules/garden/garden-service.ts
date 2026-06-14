@@ -1,7 +1,7 @@
 import { db } from '@/database';
 import { generateId, now, toDate } from '@/database/helpers';
 import type { AppError } from '@/shared/result';
-import { TIER_LIMITS, NEXT_STAGE } from '@/shared/types';
+import { TIER_LIMITS, NEXT_STAGE, WATER_THRESHOLD } from '@/shared/types';
 import type { GrowthStage, Tier, Emotion } from '@/shared/types';
 import type { GardenService, Plant, PlantGrowthUpdate, WateringResult } from './index';
 
@@ -17,6 +17,7 @@ interface PlantRow {
   planted_at: number;
   last_watered_at: number | null;
   last_growth_date: string | null;
+  water_count: number;
 }
 
 interface SeedRow {
@@ -28,10 +29,6 @@ interface SeedRow {
 }
 
 // --- Pure helpers ---
-
-export function getMaxPlots(tier: Tier): number {
-  return TIER_LIMITS[tier].gardenPlots;
-}
 
 export function getMaxGreenhouse(tier: Tier): number {
   return TIER_LIMITS[tier].greenhouseCapacity;
@@ -85,16 +82,9 @@ function createGardenService(): GardenService {
       }
 
       const gardenPlants = fetchGardenPlants(userId);
-      const maxPlots = getMaxPlots(tier);
 
-      if (plotIndex < 0 || plotIndex >= maxPlots) {
-        throwAppError({ type: 'validation', field: 'plotIndex', message: 'Plot index out of bounds' });
-      }
-      if (gardenPlants.length >= maxPlots) {
-        throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: maxPlots });
-      }
       if (gardenPlants.some((p) => p.plot_position === plotIndex)) {
-        throwAppError({ type: 'capacity', resource: 'garden', current: gardenPlants.length, max: maxPlots });
+        throwAppError({ type: 'validation', field: 'plotIndex', message: 'Plot already occupied' });
       }
 
       const plantId = generateId();
@@ -191,27 +181,31 @@ function createGardenService(): GardenService {
       const gardenPlants = fetchGardenPlants(userId);
       const advances: { plantId: string; previousStage: GrowthStage; newStage: GrowthStage }[] = [];
 
-      for (const plant of gardenPlants) {
-        const stage = plant.growth_stage as GrowthStage;
-        if (canAdvanceGrowth(stage, plant.last_growth_date, entryDate)) {
-          const newStage = NEXT_STAGE[stage];
-          if (newStage) {
-            advances.push({ plantId: plant.id, previousStage: stage, newStage });
-          }
-        }
-      }
+      const wateredAt = now();
+      db.withTransactionSync(() => {
+        for (const plant of gardenPlants) {
+          const stage = plant.growth_stage as GrowthStage;
+          if (stage === 'bloom') continue;
+          if (plant.last_growth_date === entryDate) continue; // already watered today
 
-      if (advances.length > 0) {
-        const wateredAt = now();
-        db.withTransactionSync(() => {
-          for (const { plantId, newStage } of advances) {
+          const newCount = plant.water_count + 1;
+          const threshold = WATER_THRESHOLD[stage];
+
+          if (newCount >= threshold) {
+            const newStage = NEXT_STAGE[stage]!;
+            advances.push({ plantId: plant.id, previousStage: stage, newStage });
             db.runSync(
-              'UPDATE plants SET growth_stage = ?, last_growth_date = ?, last_watered_at = ?, last_modified_at = ? WHERE id = ?',
-              [newStage, entryDate, wateredAt, wateredAt, plantId],
+              'UPDATE plants SET water_count = 0, growth_stage = ?, last_growth_date = ?, last_watered_at = ?, last_modified_at = ? WHERE id = ?',
+              [newStage, entryDate, wateredAt, wateredAt, plant.id],
+            );
+          } else {
+            db.runSync(
+              'UPDATE plants SET water_count = ?, last_growth_date = ?, last_watered_at = ?, last_modified_at = ? WHERE id = ?',
+              [newCount, entryDate, wateredAt, wateredAt, plant.id],
             );
           }
-        });
-      }
+        }
+      });
 
       const plantsAdvanced: PlantGrowthUpdate[] = advances.map(({ plantId, previousStage, newStage }) => ({
         plantId,

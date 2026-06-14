@@ -45,6 +45,7 @@ db.execSync(`
     planted_at INTEGER NOT NULL,
     last_watered_at INTEGER,
     last_growth_date TEXT,
+    water_count INTEGER NOT NULL DEFAULT 0,
     last_modified_at INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS achievement_records (

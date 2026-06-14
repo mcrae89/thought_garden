@@ -202,17 +202,18 @@ export class SyncServiceImpl implements SyncService {
 
         for (const row of c.plants?.updated ?? []) {
           db.runSync(
-            `INSERT INTO plants (id, user_id, seed_id, emotion, color_variation, growth_stage, location, plot_position, planted_at, last_watered_at, last_growth_date, last_modified_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO plants (id, user_id, seed_id, emotion, color_variation, growth_stage, location, plot_position, planted_at, last_watered_at, last_growth_date, water_count, last_modified_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET
                growth_stage = excluded.growth_stage,
                location = excluded.location,
                plot_position = excluded.plot_position,
                last_watered_at = excluded.last_watered_at,
                last_growth_date = excluded.last_growth_date,
+               water_count = excluded.water_count,
                last_modified_at = excluded.last_modified_at
              WHERE excluded.last_modified_at > plants.last_modified_at`,
-            [row.id, row.user_id, row.seed_id, row.emotion, row.color_variation, row.growth_stage, row.location, row.plot_position, toMs(row.planted_at), toMs(row.last_watered_at), row.last_growth_date, toMs(row.last_modified_at)]);
+            [row.id, row.user_id, row.seed_id, row.emotion, row.color_variation, row.growth_stage, row.location, row.plot_position, toMs(row.planted_at), toMs(row.last_watered_at), row.last_growth_date, row.water_count ?? 0, toMs(row.last_modified_at)]);
           pulled++;
         }
         for (const id of c.plants?.deleted ?? []) { db.runSync('DELETE FROM plants WHERE id = ?', [id]); pulled++; }

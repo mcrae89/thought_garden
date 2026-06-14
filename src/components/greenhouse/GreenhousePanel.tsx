@@ -29,10 +29,11 @@ export function GreenhousePanel({ onClose }: GreenhousePanelProps) {
 
   async function handleMoveToGarden(plant: Plant) {
     const gardenPlants = plants.filter((p) => p.location === 'garden');
-    const gardenSize = Math.sqrt(TIER_LIMITS[tier].gardenPlots);
-    const totalPlots = gardenSize * gardenSize;
     const occupiedPlots = new Set(gardenPlants.map((p) => p.plotPosition));
-    const firstEmpty = Array.from({ length: totalPlots }, (_, i) => i).find((i) => !occupiedPlots.has(i));
+    let firstEmpty: number | undefined;
+    for (let i = 0; i < 100; i++) {
+      if (!occupiedPlots.has(i)) { firstEmpty = i; break; }
+    }
     if (firstEmpty === undefined) {
       Alert.alert('Garden Full', 'No empty plots available in the garden.');
       return;

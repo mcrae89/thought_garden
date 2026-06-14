@@ -27,7 +27,14 @@ export const NEXT_STAGE: Record<GrowthStage, GrowthStage | null> = {
   bloom: null,
 };
 
-export const TIER_LIMITS: Record<Tier, { gardenPlots: number; greenhouseCapacity: number; dailyEntryLimit: number }> = {
-  free: { gardenPlots: 9, greenhouseCapacity: 3, dailyEntryLimit: 1 },
-  paid: { gardenPlots: 25, greenhouseCapacity: 10, dailyEntryLimit: Infinity },
+export const WATER_THRESHOLD: Record<GrowthStage, number> = {
+  seed: 3,
+  sprout: 5,
+  full: 7,
+  bloom: Infinity,
+};
+
+export const TIER_LIMITS: Record<Tier, { greenhouseCapacity: number; dailyEntryLimit: number }> = {
+  free: { greenhouseCapacity: 3, dailyEntryLimit: 1 },
+  paid: { greenhouseCapacity: 10, dailyEntryLimit: Infinity },
 };

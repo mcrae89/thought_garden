@@ -12,7 +12,7 @@ import { SeedInventoryModal } from '@/components/garden/SeedInventoryModal';
 import { PlantDetailSheet } from '@/components/garden/PlantDetailSheet';
 import { SettingsPanel } from '@/components/garden/SettingsPanel';
 import { NotificationsPanel } from '@/components/garden/NotificationsPanel';
-import { TilemapRenderer } from '@/components/garden/TilemapRenderer';
+import { TilemapRenderer, NATIVE_TILE } from '@/components/garden/TilemapRenderer';
 import { ConflictModal } from '@/components/garden/ConflictModal';
 import { useGardenSubscription } from '@/hooks/use-garden-subscription';
 import { useEntrySubscription } from '@/hooks/use-entry-subscription';
@@ -41,21 +41,45 @@ const DOOR_FRAMES = [
 
 const INTERIOR_SOIL_GID = 90;
 
-function getSoilPlots(map: TiledMap, tileSize: number) {
-  // soil_paid is the active layer in the paid map; soil_free in the free map.
-  // Only GID 90 (interior dirt) is a plantable plot — border tiles are excluded.
+const PLOT_SIZE = 2; // each plant plot spans 2x2 tiles
+
+function getSoilPlots(map: TiledMap) {
   const soilLayer = map.layers.find(
     (l) => l.type === 'tilelayer' && (l.name === 'soil_paid' || l.name === 'soil_free') && l.visible,
   );
   if (!soilLayer) return [];
-  const plots: Array<{ plotIndex: number; left: number; top: number }> = [];
-  let plotIndex = 0;
+
+  // Find bounding box of interior soil tiles (GID 90)
+  let minCol = Infinity, minRow = Infinity;
   for (let i = 0; i < soilLayer.data.length; i++) {
     if (soilLayer.data[i] === INTERIOR_SOIL_GID) {
       const col = i % soilLayer.width;
       const row = Math.floor(i / soilLayer.width);
-      plots.push({ plotIndex: plotIndex++, left: col * tileSize, top: row * tileSize });
+      if (col < minCol) minCol = col;
+      if (row < minRow) minRow = row;
     }
+  }
+
+  // Build a set of soil positions for validation
+  const soilSet = new Set<string>();
+  for (let i = 0; i < soilLayer.data.length; i++) {
+    if (soilLayer.data[i] === INTERIOR_SOIL_GID) {
+      const col = i % soilLayer.width;
+      const row = Math.floor(i / soilLayer.width);
+      soilSet.add(`${col},${row}`);
+    }
+  }
+
+  // Create plots at every PLOT_SIZE interval within the soil region (native coords)
+  const plots: Array<{ plotIndex: number; left: number; top: number }> = [];
+  let plotIndex = 0;
+  for (let r = minRow; ; r += PLOT_SIZE) {
+    for (let c = minCol; ; c += PLOT_SIZE) {
+      if (!soilSet.has(`${c},${r}`)) { if (c >= minCol + PLOT_SIZE) break; else continue; }
+      plots.push({ plotIndex: plotIndex++, left: c * NATIVE_TILE, top: r * NATIVE_TILE });
+      if (!soilSet.has(`${c + PLOT_SIZE},${r}`)) break;
+    }
+    if (!soilSet.has(`${minCol},${r + PLOT_SIZE}`)) break;
   }
   return plots;
 }
@@ -121,7 +145,7 @@ export default function GardenWorldScreen() {
   const userId = session?.userId ?? '';
   const mapData = tier !== 'paid' ? FREE_MAP : PAID_MAP;
   const tileSize = Math.floor(Math.min(screenWidth / mapData.width, screenHeight / mapData.height));
-  const soilPlots = useMemo(() => getSoilPlots(mapData, tileSize), [mapData, tileSize]);
+  const soilPlots = useMemo(() => getSoilPlots(mapData), [mapData]);
 
   useGardenSubscription(userId);
   useEntrySubscription();
@@ -149,9 +173,22 @@ export default function GardenWorldScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapWrapper}>
-        <View style={{ zIndex: 0 }}>
-          <TilemapRenderer mapData={mapData} tileSize={tileSize} />
-        </View>
+        <TilemapRenderer mapData={mapData} tileSize={tileSize}>
+          {soilPlots.map(({ plotIndex, left, top }) => {
+            const plant = gardenPlants.find((p) => p.plotPosition === plotIndex);
+            const plotNativePx = NATIVE_TILE * PLOT_SIZE;
+            return (
+              <TouchableOpacity
+                key={plotIndex}
+                style={{ position: 'absolute', left, top, width: plotNativePx, height: plotNativePx, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,0,0,0.5)' }}
+                onPress={() => handlePlotPress(plotIndex)}
+                accessibilityLabel={plant ? `Plant plot ${plotIndex}, occupied` : `Empty plot ${plotIndex}`}
+              >
+                {plant ? <PlantSprite plant={plant} size={plotNativePx} /> : null}
+              </TouchableOpacity>
+            );
+          })}
+        </TilemapRenderer>
 
         <View style={{ position: 'absolute', left: DOOR_TILE.col * tileSize, top: DOOR_TILE.row * tileSize + Math.floor(tileSize * 0.4), width: tileSize, height: Math.floor(tileSize * 0.6), zIndex: 20, overflow: 'hidden' }}>
           <TouchableOpacity
@@ -166,20 +203,6 @@ export default function GardenWorldScreen() {
             />
           </TouchableOpacity>
         </View>
-
-        {soilPlots.map(({ plotIndex, left, top }) => {
-          const plant = gardenPlants.find((p) => p.plotPosition === plotIndex);
-          return (
-            <TouchableOpacity
-              key={plotIndex}
-              style={{ position: 'absolute', left, top, width: tileSize, height: tileSize, alignItems: 'center', justifyContent: 'center' }}
-              onPress={() => handlePlotPress(plotIndex)}
-              accessibilityLabel={plant ? `Plant plot ${plotIndex}, occupied` : `Empty plot ${plotIndex}`}
-            >
-              {plant ? <PlantSprite plant={plant} /> : null}
-            </TouchableOpacity>
-          );
-        })}
 
         <TouchableOpacity
           style={{ position: 'absolute', left: CHEST_TILE.col * tileSize, top: CHEST_TILE.row * tileSize, width: tileSize * 3, height: tileSize * 3, zIndex: 10, overflow: 'hidden' }}
