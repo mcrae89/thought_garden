@@ -266,7 +266,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
   - [x] 9.2 Implement sprite rendering and palette swap system
     - Implement `getPlantSprite` to return correct sprite frame for emotion + stage + color
     - Implement `applyPaletteSwap` for runtime color replacement in `src/modules/plant-visuals/palette-swap.ts`
-    - Ensure visual consistency across sprout, full, and bloom stages (same species/color, different form). Seed stage uses shared seed.png.
+    - Ensure visual consistency across sprout, full, and bloom stages (same species/color, different form). Seed stage uses shared seed_planted.png.
     - Set up asset file structure for sprite sheets (`assets/sprites/plants/`)
     - _Requirements: 7.1, 7.5, 7.6_
 
@@ -288,7 +288,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
   - [x] 9.6 Generate plant sprites using Microsoft Copilot
     - Use the prompt templates below to generate sprites for all 30 plant species via Microsoft Copilot (DALL-E 3)
     - **Step 1 — Style reference sheet (do this first, one time):**
-      Upload `assets/sprites/objects/Farming Plants.png` as reference in Copilot and generate the potted sunflower 3-stage sprite sheet (sprout, full, bloom). Then in Piskel, erase the pot pixels on all 3 frames to create the planted variant. The seed stage is handled by the single shared seed.png sprite.
+      Upload `assets/sprites/objects/Farming Plants.png` as reference in Copilot and generate the potted sunflower 3-stage sprite sheet (sprout, full, bloom). Then in Piskel, erase the pot pixels on all 3 frames to create the planted variant. The seed stage is handled by the single shared seed_planted.png sprite.
       See `sprite-generation-prompts.md` for exact prompts and filenames.
     - **Step 2 — Generate each remaining plant (29 plants, one Copilot prompt each):**
       Generate the potted variant via Copilot, then derive the planted variant in Piskel by erasing the pot pixels. The garden renderer overlays the planted sprite on a Sprout Lands tilled dirt tile.
@@ -426,7 +426,7 @@ This plan implements the Thought Garden journaling app using React Native + Expo
     - Load `assets/tiles/garden-map-free.json` or `assets/tiles/garden-map-paid.json` based on user tier
     - Render tilemap as a grid of expo-image tiles at 2x scale (16x16 native -> 32x32 rendered, nearest-neighbor)
     - Overlay the plot grid on the tilemap center: 3x3 (free) or 5x5 (paid)
-    - Display plants at current growth stage via PlantVisualService (seed stage uses shared seed.png, sprout/full/bloom use per-plant sprite sheet frames 0/1/2)
+    - Display plants at current growth stage via PlantVisualService (seed stage uses shared seed_planted.png, sprout/full/bloom use per-plant sprite sheet frames 0/1/2)
     - Implement seed planting: tap empty plot opens seed selection from inventory
     - Implement plant drag-and-drop movement between plots
     - Show 'no empty plots' message when garden is full

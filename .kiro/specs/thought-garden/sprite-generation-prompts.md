@@ -4,7 +4,7 @@ Generate all plant sprites using Microsoft Copilot (DALL-E 3). Upload `assets/sp
 
 ## Workflow Overview
 
-1. Generate the **potted** 3-stage sprite sheet for each plant (one Copilot prompt per plant). Sprite sheets contain sprout, full, and bloom frames only — the seed stage uses a single shared sprite (`assets/sprites/plants/seed.png`) and is NOT part of per-plant sheets.
+1. Generate the **potted** 3-stage sprite sheet for each plant (one Copilot prompt per plant). Sprite sheets contain sprout, full, and bloom frames only — the seed stage uses a single shared sprite (`assets/sprites/plants/seed_planted.png`) and is NOT part of per-plant sheets.
 2. In Piskel, open the potted sprite sheet, erase the pot pixels on all 3 frames, save as the **planted** variant (transparent base — the garden renderer overlays this on a Sprout Lands tilled dirt tile)
 
 **Total Copilot prompts: 30** (one 3-stage sprite sheet per plant)

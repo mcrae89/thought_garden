@@ -215,7 +215,7 @@ interface PlantVisualService {
 
 interface SpriteData {
   uri: string;           // Asset path to the sprite sheet PNG
-  frameIndex: number;    // Which frame in the sprite sheet (0=sprout, 1=full, 2=bloom). Seed stage uses shared seed.png, not this sheet.
+  frameIndex: number;    // Which frame in the sprite sheet (0=sprout, 1=full, 2=bloom). Seed stage uses shared seed_planted.png, not this sheet.
   width: 32;            // Sprite width in pixels
   height: 32;           // Sprite height in pixels
 }
@@ -223,7 +223,7 @@ interface SpriteData {
 interface PlantSpriteSheet {
   emotion: Emotion;
   assetPath: string;     // e.g., "assets/sprites/plants/happy-sunflower.png"
-  frames: 3;            // 3 frames: sprout, full, bloom (arranged horizontally). Seed stage uses shared seed.png.
+  frames: 3;            // 3 frames: sprout, full, bloom (arranged horizontally). Seed stage uses shared seed_planted.png.
   defaultPalette: ColorPalette;
 }
 
@@ -291,7 +291,7 @@ Using Piskel (free, browser-based) or LibreSprite (free Aseprite fork), simplify
 
 - Bloom → Full: Remove flowers/fruit, keep full leaf structure
 - Full → Sprout: Reduce to 1-2 small leaves/stems
-- Seed stage: A single shared seed sprite (`assets/sprites/plants/seed.png`) is used for all plants. It is NOT included in per-plant sprite sheets.
+- Seed stage: A single shared seed sprite (`assets/sprites/plants/seed_planted.png`) is used for all plants. It is NOT included in per-plant sprite sheets.
 
 **Step 4: Garden tileset (Sprout Lands by Cup Nooble)**
 
@@ -355,7 +355,7 @@ The palette swap system multiplies visual variety without requiring additional a
 assets/
 ├── sprites/
 │   ├── plants/
-│   │   ├── seed.png                 (shared seed sprite: displayed for all plants at seed stage)
+│   │   ├── seed_planted.png                 (shared seed sprite: displayed for all plants at seed stage)
 │   │   ├── happy-sunflower.png      (sprite sheet: 3 frames for sprout, full, bloom)
 │   │   ├── sad-weeping-willow.png
 │   │   ├── angry-cactus.png
@@ -832,7 +832,7 @@ export const TIER_LIMITS: Record<Tier, { gardenPlots: number; greenhouseCapacity
 
 ### Property 23: Visual consistency across growth stages
 
-*For any* plant, the species visual and color variation SHALL be identical across the sprout, full, and bloom growth stages. When a plant is at the seed stage, the shared seed sprite (`assets/sprites/plants/seed.png`) SHALL be displayed regardless of the plant's emotion type. Only the structural form changes between the non-seed stages, not the identity.
+*For any* plant, the species visual and color variation SHALL be identical across the sprout, full, and bloom growth stages. When a plant is at the seed stage, the shared seed sprite (`assets/sprites/plants/seed_planted.png`) SHALL be displayed regardless of the plant's emotion type. Only the structural form changes between the non-seed stages, not the identity.
 
 **Validates: Requirements 7.6**
 

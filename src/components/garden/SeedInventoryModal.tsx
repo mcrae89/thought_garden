@@ -78,7 +78,7 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
               accessibilityState={{ disabled: plotIndex === null }}
             >
               <Image
-                source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed.png')}
+                source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed_planted.png')}
                 style={styles.seedSprite}
                 contentFit="contain"
                 accessibilityLabel={`${seed.emotion} seed bag`}

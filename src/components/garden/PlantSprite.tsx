@@ -45,7 +45,7 @@ export function PlantSprite({ plant, size }: { plant: Plant; size?: number }) {
   if (plant.growthStage === 'seed') {
     return (
       <Image
-        source={require('../../../assets/sprites/plants/seed.png')}
+        source={require('../../../assets/sprites/plants/seed_planted.png')}
         style={{ width: s, height: s }}
         resizeMode="stretch"
         accessibilityLabel={`${plant.emotion} seed`}
