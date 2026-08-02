@@ -8,8 +8,8 @@ Thought Garden is a mobile journaling application that gamifies daily reflection
 
 - **App**: The Thought Garden mobile application
 - **Entry**: A text-based journal entry created by the user
-- **Primary_Emotion**: The dominant emotion selected by the user for a journal entry, chosen from the 30-emotion set
-- **Secondary_Emotion**: Additional emotions present in a journal entry beyond the primary emotion, chosen from the 30-emotion set
+- **Primary_Emotion**: The dominant emotion selected by the user for a journal entry, chosen from the 21-emotion set
+- **Secondary_Emotion**: Additional emotions present in a journal entry beyond the primary emotion, chosen from the 21-emotion set
 - **Seed**: A collectible reward earned through journaling achievements, typed by the primary emotion of the entry that earned it
 - **Plant**: A virtual plant grown from a seed in the user's garden, with type determined by the seed's emotion and color variation determined by secondary emotions
 - **Garden**: A grid-based virtual space where users plant and grow plants
@@ -21,44 +21,47 @@ Thought Garden is a mobile journaling application that gamifies daily reflection
 - **Free_Tier**: The default access level with limited plot space and greenhouse capacity
 - **Paid_Tier**: The premium access level with expanded plot space and greenhouse capacity
 - **Sync**: The process of reconciling local data with cloud storage when connectivity is available
-- **Emotion_Set**: The complete set of 30 emotions available for selection in the App
+- **Emotion_Set**: The complete set of 21 emotions available for selection in the App
 
 ### Emotion-to-Plant Mapping
 
-The following table defines the canonical mapping between each emotion and its corresponding plant species visual. Each emotion maps to exactly one distinct plant species.
+The following table defines the canonical mapping between each emotion and its corresponding plant visual. Each emotion maps to exactly one distinct plant type from the Sproutlands asset pack. Plants are categorized as crops (with 4 growth stages), fruit trees (bare/fruited), or berry bushes (bare/fruited).
 
-| # | Emotion | Plant Species | Symbolism Basis |
-|---|---------|--------------|-----------------|
-| 1 | Happy | Sunflower | Radiates joy and positivity |
-| 2 | Sad | Bleeding Heart | Drooping heart-shaped flowers evoke melancholy |
-| 3 | Angry | Cactus | Thorny, defensive exterior |
-| 4 | Anxious | Passionflower | Intricate tangled tendrils and tightly coiled buds evoke anxiety |
-| 5 | Calm | Lavender | Known for soothing properties |
-| 6 | Grateful | Hydrangea | Represents heartfelt gratitude |
-| 7 | Love | Rose | Universal symbol of love |
-| 8 | Hope | Daffodil | First bloom of spring, new beginnings |
-| 9 | Excited | Bird of Paradise | Vibrant, exotic energy |
-| 10 | Lonely | Forget-Me-Not | Longing for connection |
-| 11 | Proud | Orchid | Elegance and accomplishment |
-| 12 | Confused | Wisteria | Tangled, cascading vines |
-| 13 | Peaceful | Lotus | Serenity and spiritual calm |
-| 14 | Nostalgic | Cherry Blossom | Fleeting beauty of the past |
-| 15 | Jealous | Nightshade | Beautiful but toxic, alluring and dangerous |
-| 16 | Inspired | Iris | Named for the goddess of messages |
-| 17 | Guilty | Thistle | Prickly self-reproach |
-| 18 | Curious | Snapdragon | Playful, opening to reveal secrets |
-| 19 | Frustrated | Bramble | Tangled, thorny obstruction |
-| 20 | Content | Chamomile | Gentle satisfaction and ease |
-| 21 | Overwhelmed | Morning Glory | Spreads rapidly and covers everything, hard to contain |
-| 22 | Brave | Protea | Bold, striking, resilient bloom |
-| 23 | Embarrassed | Mimosa (Sensitive Plant) | Shrinks when touched |
-| 24 | Surprised | Stargazer Lily | Unexpected, dramatic form |
-| 25 | Bored | Dandelion | Drifts away, restless and fleeting |
-| 26 | Determined | Gladiolus | Tall upright stem, blooms sequentially from base to tip |
-| 27 | Compassionate | Aloe Vera | Healing and nurturing others |
-| 28 | Melancholy | Bluebell | Quiet, reflective sadness |
-| 29 | Joyful | Daisy | Simple, pure happiness |
-| 30 | Vulnerable | Snowdrop | Fragile first bloom, delicate and exposed |
+#### Crops (4 growth stages from Farming Plants spritesheet)
+
+| # | Emotion | Plant | Category | Symbolism Basis |
+|---|---------|-------|----------|-----------------|
+| 1 | Happy | Star Fruit | Crop | Bright, radiating, star-shaped = joy |
+| 2 | Sad | Eggplant | Crop | Heavy, drooping, deep purple |
+| 3 | Angry | Corn | Crop | Tall, rigid, explosive |
+| 4 | Anxious | Carrot | Crop | Hidden underground, can't see how it's going |
+| 5 | Calm | Wheat | Crop | Gentle, swaying, peaceful |
+| 6 | Grateful | Cauliflower | Crop | Full, abundant, rounded |
+| 7 | Love | Tomato | Crop | Red, heart-associated, ripens sweetly |
+| 8 | Excited | Pumpkin | Crop | Big, bold, explosive growth |
+| 9 | Lonely | Parsnip | Crop | Pale, singular, rooted alone |
+| 10 | Confused | Blue Kale | Crop | Unidentifiable — perfect for confusion |
+| 11 | Inspired | Leafy Greens | Crop | Fresh growth, new ideas |
+| 12 | Frustrated | Radish | Crop | Stubby, stuck, hard to pull out |
+| 13 | Content | Cucumber | Crop | Cool, easy, comfortable |
+| 14 | Overwhelmed | Purple Cabbage | Crop | Spreading, dense, hard to manage |
+
+#### Fruit Trees (bare/fruited states only)
+
+| # | Emotion | Plant | Category | Symbolism Basis |
+|---|---------|-------|----------|-----------------|
+| 15 | Hope | Apple Tree | Tree | New beginnings, first harvest |
+| 16 | Proud | Orange Tree | Tree | Stands tall, productive, showy |
+| 17 | Brave | Peach Tree | Tree | Soft exterior, tough pit inside |
+| 18 | Determined | Pear Tree | Tree | Upright, steady, patient |
+
+#### Berry Bushes (bare/fruited states only)
+
+| # | Emotion | Plant | Category | Symbolism Basis |
+|---|---------|-------|----------|-----------------|
+| 19 | Peaceful | Blueberry Bush | Berry | Cool, calm, serene |
+| 20 | Curious | Purple Berry Bush | Berry | Unusual, intriguing |
+| 21 | Compassionate | Red Berry Bush | Berry | Warm, sweet, shared with others |
 
 ## Requirements
 
@@ -123,7 +126,7 @@ The following table defines the canonical mapping between each emotion and its c
 6. WHEN a user submits their first-ever journal entry, THE App SHALL award one Seed typed to that entry's Primary_Emotion
 7. WHEN a user submits their 10th, 50th, or 100th journal entry, THE App SHALL award one Seed typed to that milestone entry's Primary_Emotion
 8. WHEN a user selects a specific emotion as Primary_Emotion for the first time, THE App SHALL award one Seed of that emotion type
-9. WHEN a user has selected all 30 emotions as Primary_Emotion at least once, THE App SHALL award one Seed typed to the user's most frequently used Primary_Emotion
+9. WHEN a user has selected all 21 emotions as Primary_Emotion at least once, THE App SHALL award one Seed typed to the user's most frequently used Primary_Emotion
 10. WHEN a user submits an entry with 200 or more words for the first time, THE App SHALL award one Seed typed to that entry's Primary_Emotion
 11. WHEN a user adds Secondary_Emotions to an entry for the first time, THE App SHALL award one Seed typed to that entry's Primary_Emotion
 
@@ -137,7 +140,7 @@ The following table defines the canonical mapping between each emotion and its c
 
 15. WHEN a user's plant reaches the Bloom Growth_Stage for the first time, THE App SHALL award one Seed typed to the emotion of the bloomed plant
 16. WHEN a user fills all available garden plots for the first time, THE App SHALL award one Seed typed to the most common emotion among the planted garden plants
-17. WHEN a user has grown at least one plant of each of the 30 emotion types, THE App SHALL award one Seed typed to the most common emotion among the user's garden plants
+17. WHEN a user has grown at least one plant of each of the 21 emotion types, THE App SHALL award one Seed typed to the most common emotion among the user's garden plants
 
 **Repeatable Achievements:**
 
@@ -188,7 +191,7 @@ The following table defines the canonical mapping between each emotion and its c
 2. THE App SHALL determine the plant's color variation based on the Secondary_Emotions of the entry that earned the Seed, where the color variation is fixed at the time the Seed is awarded and does not change if the entry is later edited
 3. IF a Seed's entry has multiple Secondary_Emotions, THEN THE App SHALL derive the color variation from the first Secondary_Emotion selected by the user
 4. WHEN a Seed has no associated Secondary_Emotions, THE App SHALL display the plant in its default color for that emotion type
-5. THE App SHALL provide visually distinct plant types for each of the 30 emotions in the Emotion_Set, as defined in the Emotion-to-Plant Mapping table
+5. THE App SHALL provide visually distinct plant types for each of the 21 emotions in the Emotion_Set, as defined in the Emotion-to-Plant Mapping table
 6. THE App SHALL maintain the plant's species visual and color variation consistently across all four Growth_Stages (Seed, Sprout, Full, Bloom)
 
 ### Requirement 8: Greenhouse Storage

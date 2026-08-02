@@ -3,10 +3,9 @@ import { EMOTION_TO_PLANT } from '@/shared/constants';
 import { EMOTION_PALETTES } from './emotion-palettes';
 import type { ColorPalette, PlantVisualService, SpriteData } from './index';
 
-export function getSpritePath(emotion: Emotion, location: 'garden' | 'greenhouse' = 'garden'): string {
-  const plantName = EMOTION_TO_PLANT[emotion].toLowerCase().replace(/ /g, '-');
-  const variant = location === 'greenhouse' ? 'potted' : 'planted';
-  return `assets/sprites/plants/${emotion}-${plantName}-${variant}.png`;
+export function getSpritePath(emotion: Emotion, _location: 'garden' | 'greenhouse' = 'garden'): string {
+  const plant = EMOTION_TO_PLANT[emotion];
+  return `assets/sprites/objects/${plant.category === 'tree' ? 'trees' : 'items'}/${plant.spriteKey}.png`;
 }
 
 export function getFrameIndex(stage: GrowthStage): number {

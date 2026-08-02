@@ -206,25 +206,29 @@ interface AuthError {
 ```typescript
 interface PlantVisualService {
   getPlantSprite(emotion: Emotion, stage: GrowthStage, colorVariation: Emotion | null): SpriteData;
-  getPlantAnimation(stage: GrowthStage): AnimationConfig;
-  applyPaletteSwap(baseSprite: SpriteData, targetPalette: ColorPalette): SpriteData;
+  getPalette(emotion: Emotion): ColorPalette;
+  getDefaultPalette(emotion: Emotion): ColorPalette;
 }
 
-// 30 emotions x 3 stages x (30 color variations + 1 default) = 2,790 plant-stage combinations + 1 shared seed sprite
-// Achieved through 120 base PNG sprites (32x32px) + runtime palette swapping, NOT 3,720 separate assets
+// 21 emotions mapped to Sproutlands asset pack sprites:
+// - 14 crops with 4 growth stages from "Farming Plants.png" (64x240, 16px frames)
+// - 4 fruit trees with 2 states (bare/fruited) from "Trees, stumps and bushes.png" (192x112)
+// - 3 berry bushes with 2 states (bare/fruited) from "Trees, stumps and bushes.png"
+// Corn occupies 2 rows (32px height) in the crop spritesheet; all others are 16px.
 
 interface SpriteData {
   uri: string;           // Asset path to the sprite sheet PNG
-  frameIndex: number;    // Which frame in the sprite sheet (0=sprout, 1=full, 2=bloom). Seed stage uses shared seed_planted.png, not this sheet.
-  width: 32;            // Sprite width in pixels
-  height: 32;           // Sprite height in pixels
+  frameIndex: number;    // Which frame/column in the sprite sheet (0=seed, 1=sprout, 2=full, 3=bloom)
+  width: 32;            // Sprite width in pixels (rendered at 2x native)
+  height: 32;           // Sprite height in pixels (rendered at 2x native)
 }
 
-interface PlantSpriteSheet {
-  emotion: Emotion;
-  assetPath: string;     // e.g., "assets/sprites/plants/happy-sunflower.png"
-  frames: 3;            // 3 frames: sprout, full, bloom (arranged horizontally). Seed stage uses shared seed_planted.png.
-  defaultPalette: ColorPalette;
+type PlantCategory = 'crop' | 'tree' | 'berry';
+
+interface PlantInfo {
+  name: string;          // Display name (e.g., "Star Fruit")
+  category: PlantCategory;
+  spriteKey: string;     // Key for sprite lookup (e.g., "star_fruit")
 }
 
 interface ColorPalette {
@@ -241,84 +245,73 @@ type EmotionColorMap = Record<Emotion, ColorPalette>;
 interface GardenTilemap {
   tilesetPath: string;       // "assets/tiles/garden-tileset.png"
   mapDataPath: string;       // "assets/tiles/garden-map.json" (Tiled export)
-  tileSize: 32;             // 32x32px tiles
+  tileSize: 32;             // 32x32px tiles (16px native, 2x scaled)
   gridSize: { cols: number; rows: number };
 }
 
-// Rendering uses expo-image for sprite display with optional
-// react-native-canvas or expo-gl for runtime palette swap shader.
-// Fallback: pre-generate palette-swapped PNGs at build time via Node script.
+// Rendering uses expo-image for sprite display with spritesheet clipping.
+// Crops use column offset within "Farming Plants.png" for growth stages.
+// Trees/bushes toggle between bare and fruited sprite positions in "Trees, stumps and bushes.png".
 ```
 
 ## Art Production Pipeline
 
 ### Visual Style
 
-Stardew Valley / Farmville inspired 16-bit pixel art. Top-down garden view with isometric-lite perspective. All sprites are 32×32 pixels. The aesthetic is warm, cozy, and readable at mobile screen sizes.
+Stardew Valley / Farmville inspired 16-bit pixel art. Top-down garden view with isometric-lite perspective. All environment and plant sprites are natively 16×16 pixels, rendered at 2× scale (32×32) using nearest-neighbor interpolation. The aesthetic is warm, cozy, and readable at mobile screen sizes.
 
-**Environment tileset**: "Sprout Lands - Asset Pack" by Cup Nooble provides the garden environment tiles (soil, grass, fences, paths, decorative elements). Sprout Lands uses a warm, rounded 16×16 pixel art style that is scaled to 32×32 for rendering (nearest-neighbor upscale to preserve pixel crispness). This gives the garden a cohesive cozy/farming aesthetic that works across all age ranges. Plant sprites remain custom AI-generated at native 32×32 to allow full creative control over the 30 emotion-species designs.
+**All art assets**: "Sprout Lands - Asset Pack" (Premium) by Cup Nooble provides both the garden environment tiles AND the plant/crop sprites. This ensures complete visual cohesion — no style mismatch between environment and plants.
 
 ### Asset Categories
 
-| Category | Description | Count |
-|----------|-------------|-------|
-| Garden tilemap | Soil plots, grass, fences, paths, decorative elements | 1 tileset sheet |
-| Plant sprites | 1 shared seed sprite + 30 plants × 3 growth stages = 91 base sprites at 32×32px | 30 sprite sheets + 1 seed sprite |
-| UI elements | Seed inventory icons, achievement badges, notification frames | ~3 sheets |
-| Background/environment | Sky, seasonal variations (optional) | 1-4 assets |
+| Category | Description | Source |
+|----------|-------------|--------|
+| Garden tilemap | Soil plots, grass, fences, paths, decorative elements | Sprout Lands environment tiles |
+| Crop sprites | 14 crops × 4 growth stages in "Farming Plants.png" (64×240) | Sprout Lands items |
+| Fruit tree sprites | 4 trees (bare/fruited) in "Trees, stumps and bushes.png" (192×112) | Sprout Lands objects |
+| Berry bush sprites | 3 bushes (bare/fruited) in "Trees, stumps and bushes.png" | Sprout Lands objects |
+| Seed/item sprites | Harvested item icons in "farming-Plants-items.png" (32×240) | Sprout Lands items |
+| UI elements | Seed inventory icons, achievement badges, notification frames | Sprout Lands + custom |
 
-### Generation Workflow using Microsoft Copilot
+### Spritesheet Layout
 
-The entire art pipeline uses Microsoft Copilot (which includes DALL-E 3) at zero cost. The workflow is designed to produce consistent pixel art across all 30 plant species.
+**Farming Plants.png** (64×240, crop growth stages):
+- 4 columns (16px each): seed → sprout → mid → full growth
+- 15 rows (16px each), except corn which uses rows 0-1 (32px tall)
+- Row order: Corn(0-1), Carrot(2), Cauliflower(3), Tomato(4), Eggplant(5), Blue Kale(6), Leafy Greens(7), Wheat(8), Pumpkin(9), Parsnip(10), Purple Cabbage(11), Radish(12), Star Fruit(13), Cucumber(14)
 
-**Step 1: Generate a style reference sheet**
+**Trees, stumps and bushes.png** (192×112, trees and bushes):
+- Trees and berry bushes with bare and fruited variants
+- No growth stages — trees display at full size always
+- Berry bushes toggle between bare and fruited based on bloom stage
 
-Create one complete plant at all 4 growth stages to establish the pixel art style and serve as a visual anchor for all subsequent generations.
+**farming-Plants-items.png** (32×240, harvested items for inventory UI):
+- Row 0: Empty seed bag
+- Rows 1-14: Harvested crop items (same order as Farming Plants.png)
 
-Example prompt:
-> "Pixel art sprite sheet showing a sunflower in a pot at 3 growth stages (sprout, full plant, blooming), 32x32 pixels each, Stardew Valley style, transparent background, top-down view, 16-bit retro game aesthetic"
+### Garden Tileset (Sprout Lands by Cup Nooble)
 
-**Step 2: Generate each bloom-stage plant individually**
+The environment tileset is sourced from "Sprout Lands - Asset Pack" by Cup Nooble. This provides a professionally crafted, visually cohesive set of garden tiles (soil, grass, fences, paths, water, decorative flowers, rocks, etc.) in a warm 16×16 pixel art style.
 
-Use consistent prompts referencing the style sheet to generate the bloom (final) stage for each of the 30 plants.
-
-Example prompt:
-> "32x32 pixel art sprite of a [plant name] in a pot, Stardew Valley style, transparent background, top-down view, 16-bit retro game aesthetic, single sprite on clean background"
-
-**Step 3: Manually derive earlier growth stages**
-
-Using Piskel (free, browser-based) or LibreSprite (free Aseprite fork), simplify each bloom sprite to create the sprout and full stages. The seed stage is a universal small pot with soil.
-
-- Bloom → Full: Remove flowers/fruit, keep full leaf structure
-- Full → Sprout: Reduce to 1-2 small leaves/stems
-- Seed stage: A single shared seed sprite (`assets/sprites/plants/seed_planted.png`) is used for all plants. It is NOT included in per-plant sprite sheets.
-
-**Step 4: Garden tileset (Sprout Lands by Cup Nooble)**
-
-The environment tileset is sourced from "Sprout Lands - Asset Pack" by Cup Nooble rather than AI-generated. This provides a professionally crafted, visually cohesive set of garden tiles (soil, grass, fences, paths, water, decorative flowers, rocks, etc.) in a warm 16×16 pixel art style.
-
-- Download the Sprout Lands asset pack from itch.io
 - Use Tiled to assemble the garden map layout from the provided tileset
-- Tiles are natively 16×16; render at 2× scale (32×32 on screen) using nearest-neighbor interpolation to match the plant sprite size
-- The Sprout Lands palette and rounded style complement the custom plant sprites naturally
+- Tiles are natively 16×16; render at 2× scale (32×32 on screen) using nearest-neighbor interpolation
+- All plant sprites come from the same pack, ensuring perfect style consistency
 
 ### Palette Swap System
 
-The palette swap system multiplies visual variety without requiring additional art assets.
+The palette swap system provides subtle visual variety for plants that share the same emotion type.
 
 **How it works:**
 
-1. Each base sprite uses a standardized 4-color palette:
-   - **Primary**: Main plant body color
-   - **Secondary**: Accent/leaf color
+1. Each emotion has a defined 4-color palette used for UI accents (seed inventory borders, plant detail labels, notification colors):
+   - **Primary**: Main accent color
+   - **Secondary**: Supporting accent color
    - **Highlight**: Bright detail color
    - **Shadow**: Dark depth color
 
-2. 30 emotion-specific color palettes are defined in `assets/palettes/emotion-palettes.json`
+2. 21 emotion-specific color palettes are defined in `src/modules/plant-visuals/emotion-palettes.ts`
 
-3. At runtime, the rendering system replaces the base palette colors with the target emotion's palette
-
-4. This gives: 120 base sprites × 31 palette options (30 emotions + default) = **3,720 visual combinations** with zero extra art
+3. These palettes are used for UI theming around plants (inventory card borders, growth stage indicators, etc.) — not for modifying the Sproutlands sprites themselves, which are used as-is.
 
 **Example palette definition:**
 
@@ -343,11 +336,8 @@ The palette swap system multiplies visual variety without requiring additional a
 
 | Tool | Purpose | Cost |
 |------|---------|------|
-| Microsoft Copilot (DALL-E 3) | Sprite generation | Free (included with Microsoft account) |
-| Piskel | Pixel art cleanup, animation, sprite sheet assembly | Free (browser-based) |
-| LibreSprite | Advanced sprite editing (free Aseprite fork) | Free (open source) |
 | Tiled | Tilemap editor for garden layout | Free (open source) |
-| Sprout Lands - Asset Pack (Cup Nooble) | Primary environmental tileset (soil, grass, fences, paths, decorations) | Pro license (minimal cost, covers commercial use) |
+| Sprout Lands - Asset Pack (Cup Nooble) | All game art: environment tiles + plant/crop/tree sprites | Pro license (covers commercial use) |
 
 ### Asset File Structure
 
@@ -355,21 +345,28 @@ The palette swap system multiplies visual variety without requiring additional a
 assets/
 ├── sprites/
 │   ├── plants/
-│   │   ├── seed_planted.png                 (shared seed sprite: displayed for all plants at seed stage)
-│   │   ├── happy-sunflower.png      (sprite sheet: 3 frames for sprout, full, bloom)
-│   │   ├── sad-weeping-willow.png
-│   │   ├── angry-cactus.png
-│   │   └── ... (30 total)
-│   ├── seeds/
-│   │   └── seed-icons.png           (30 seed inventory icons)
+│   │   └── seed_planted.png                 (legacy - no longer used)
+│   ├── objects/
+│   │   ├── items/
+│   │   │   ├── Farming Plants.png           (crop growth stages: 64×240, 14 crops × 4 stages)
+│   │   │   ├── farming-Plants-items.png     (harvested item icons: 32×240, row 0=bag, rows 1-14=items)
+│   │   │   └── fruit-n-berries-items.png
+│   │   ├── trees/
+│   │   │   ├── Trees, stumps and bushes.png (trees + berry bushes: 192×112, bare/fruited)
+│   │   │   ├── tree_appel_sprites.png
+│   │   │   ├── tree_orange_sprites.png
+│   │   │   ├── tree_peach_sprites.png
+│   │   │   └── tree_pear_sprites.png
+│   │   └── decorations/
 │   └── ui/
 │       ├── achievement-badges.png
 │       └── notification-frame.png
 ├── tiles/
-│   ├── garden-tileset.png           (Sprout Lands by Cup Nooble - soil, grass, fences, paths, decorations)
-│   └── garden-map.json             (Tiled export)
+│   ├── sprout-lands/               (Sprout Lands by Cup Nooble - soil, grass, fences, paths, structures)
+│   ├── garden-map-free.json        (Tiled export - free tier)
+│   └── garden-map-paid.json        (Tiled export - paid tier)
 └── palettes/
-    └── emotion-palettes.json        (30 color palette definitions)
+    └── .gitkeep                     (palettes defined in code: src/modules/plant-visuals/emotion-palettes.ts)
 ```
 
 ### Rendering Approach
@@ -706,7 +703,7 @@ export const TIER_LIMITS: Record<Tier, { gardenPlots: number; greenhouseCapacity
 
 ### Property 2: Emotion selection validation
 
-*For any* entry submission, the system SHALL accept it if and only if exactly one Primary_Emotion is selected from the 30-emotion set, and all Secondary_Emotions (if any) are from the 30-emotion set excluding the selected Primary_Emotion.
+*For any* entry submission, the system SHALL accept it if and only if exactly one Primary_Emotion is selected from the 21-emotion set, and all Secondary_Emotions (if any) are from the 21-emotion set excluding the selected Primary_Emotion.
 
 **Validates: Requirements 2.2, 2.3, 3.1**
 
@@ -748,7 +745,7 @@ export const TIER_LIMITS: Record<Tier, { gardenPlots: number; greenhouseCapacity
 
 ### Property 9: First-time emotion achievement
 
-*For any* emotion from the 30-emotion set, the first time a user selects it as Primary_Emotion, the system SHALL award exactly one seed of that emotion type. Subsequent uses of the same emotion as Primary_Emotion SHALL NOT trigger this achievement again.
+*For any* emotion from the 21-emotion set, the first time a user selects it as Primary_Emotion, the system SHALL award exactly one seed of that emotion type. Subsequent uses of the same emotion as Primary_Emotion SHALL NOT trigger this achievement again.
 
 **Validates: Requirements 4.8**
 

@@ -1,6 +1,7 @@
 import * as fc from 'fast-check';
 import { getSpritePath } from '@/modules/plant-visuals/plant-visual-service';
 import { EMOTIONS } from '@/shared/types';
+import { EMOTION_TO_PLANT } from '@/shared/constants';
 
 /**
  * Feature: thought-garden, Property 21: Emotion-to-species bijection
@@ -30,27 +31,22 @@ describe('Property 21: Emotion-to-species bijection', () => {
     );
   });
 
-  it('should include emotion name in path', () => {
+  it('should include the spriteKey in path', () => {
     fc.assert(
       fc.property(
         fc.constantFrom(...EMOTIONS),
         (e) => {
-          return getSpritePath(e, 'garden').includes(e);
+          const plantInfo = EMOTION_TO_PLANT[e];
+          return getSpritePath(e, 'garden').includes(plantInfo.spriteKey);
         },
       ),
       { numRuns: 100 },
     );
   });
 
-  it('should return different paths for greenhouse vs garden', () => {
-    fc.assert(
-      fc.property(
-        fc.constantFrom(...EMOTIONS),
-        (e) => {
-          return getSpritePath(e, 'greenhouse') !== getSpritePath(e, 'garden');
-        },
-      ),
-      { numRuns: 100 },
-    );
+  it('should map each emotion to a unique plant name', () => {
+    const names = EMOTIONS.map((e) => EMOTION_TO_PLANT[e].name);
+    const uniqueNames = new Set(names);
+    expect(uniqueNames.size).toBe(EMOTIONS.length);
   });
 });

@@ -180,11 +180,11 @@ export default function GardenWorldScreen() {
             return (
               <TouchableOpacity
                 key={plotIndex}
-                style={{ position: 'absolute', left, top, width: plotNativePx, height: plotNativePx, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,0,0,0.5)' }}
+                style={{ position: 'absolute', left, top, width: plotNativePx, height: plotNativePx, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
                 onPress={() => handlePlotPress(plotIndex)}
                 accessibilityLabel={plant ? `Plant plot ${plotIndex}, occupied` : `Empty plot ${plotIndex}`}
               >
-                {plant ? <PlantSprite plant={plant} size={plotNativePx} /> : null}
+                {plant ? <PlantSprite plant={plant} /> : null}
               </TouchableOpacity>
             );
           })}
@@ -270,7 +270,7 @@ export default function GardenWorldScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4a9' },
   mapWrapper: { position: 'relative' },
   hud: { position: 'absolute', bottom: spacing.lg, right: spacing.lg, gap: spacing.sm },
   hudButton: { width: 48, height: 48, backgroundColor: colors.surface, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },

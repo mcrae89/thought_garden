@@ -1,10 +1,9 @@
 export const EMOTIONS = [
   'happy', 'sad', 'angry', 'anxious', 'calm',
   'grateful', 'love', 'hope', 'excited', 'lonely',
-  'proud', 'confused', 'peaceful', 'nostalgic', 'jealous',
-  'inspired', 'guilty', 'curious', 'frustrated', 'content',
-  'overwhelmed', 'brave', 'embarrassed', 'surprised', 'bored',
-  'determined', 'compassionate', 'melancholy', 'joyful', 'vulnerable',
+  'proud', 'confused', 'peaceful', 'inspired', 'curious',
+  'frustrated', 'content', 'overwhelmed', 'brave', 'determined',
+  'compassionate',
 ] as const;
 
 export type Emotion = typeof EMOTIONS[number];

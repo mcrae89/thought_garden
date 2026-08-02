@@ -3,40 +3,33 @@ import { Image } from 'expo-image';
 import { useGardenStore } from '@/stores/garden-store';
 import { modalStyles } from './styles';
 import { colors, spacing } from '@/theme/tokens';
+import { EMOTION_TO_PLANT } from '@/shared/constants';
 import type { SeedData } from '@/stores/seed-store';
-import type { Tier } from '@/shared/types';
+import type { Tier, Emotion } from '@/shared/types';
 
-const SEED_BAG_IMAGES: Record<string, ReturnType<typeof require>> = {
-  happy: require('../../../assets/sprites/seeds/happy-sunflower-seeds.png'),
-  sad: require('../../../assets/sprites/seeds/sad-bleeding-heart-seeds.png'),
-  angry: require('../../../assets/sprites/seeds/angry-cactus-seeds.png'),
-  anxious: require('../../../assets/sprites/seeds/anxious-passionflower-seeds.png'),
-  calm: require('../../../assets/sprites/seeds/calm-lavender-seeds.png'),
-  grateful: require('../../../assets/sprites/seeds/grateful-hydrangea-seeds.png'),
-  love: require('../../../assets/sprites/seeds/love-rose-seeds.png'),
-  hope: require('../../../assets/sprites/seeds/hope-daffodil-seeds.png'),
-  excited: require('../../../assets/sprites/seeds/excited-bird-of-paradise-seeds.png'),
-  lonely: require('../../../assets/sprites/seeds/lonely-forget-me-not-seeds.png'),
-  proud: require('../../../assets/sprites/seeds/proud-orchid-seeds.png'),
-  confused: require('../../../assets/sprites/seeds/confused-wisteria-seeds.png'),
-  peaceful: require('../../../assets/sprites/seeds/peaceful-lotus-seeds.png'),
-  nostalgic: require('../../../assets/sprites/seeds/nostalgic-cherry-blossom-seeds.png'),
-  jealous: require('../../../assets/sprites/seeds/jealous-nightshade-seeds.png'),
-  inspired: require('../../../assets/sprites/seeds/inspired-iris-seeds.png'),
-  guilty: require('../../../assets/sprites/seeds/guilty-thistle-seeds.png'),
-  curious: require('../../../assets/sprites/seeds/curious-snapdragon-seeds.png'),
-  frustrated: require('../../../assets/sprites/seeds/frustrated-bramble-seeds.png'),
-  content: require('../../../assets/sprites/seeds/content-chamomile-seeds.png'),
-  overwhelmed: require('../../../assets/sprites/seeds/overwhelmed-morning-glory-seeds.png'),
-  brave: require('../../../assets/sprites/seeds/brave-protea-seeds.png'),
-  embarrassed: require('../../../assets/sprites/seeds/embarrassed-mimosa-seeds.png'),
-  surprised: require('../../../assets/sprites/seeds/surprised-stargazer-lily-seeds.png'),
-  bored: require('../../../assets/sprites/seeds/bored-dandelion-seeds.png'),
-  determined: require('../../../assets/sprites/seeds/determined-gladiolus-seeds.png'),
-  compassionate: require('../../../assets/sprites/seeds/compassionate-aloe-vera-seeds.png'),
-  melancholy: require('../../../assets/sprites/seeds/melancholy-bluebell-seeds.png'),
-  joyful: require('../../../assets/sprites/seeds/joyful-daisy-seeds.png'),
-  vulnerable: require('../../../assets/sprites/seeds/vulnerable-snowdrop-seeds.png'),
+// Farming Plants items.png: 32x240, 16px per row
+// Row 0 = empty seed bag, Row 1+ = harvested crop items (same order as crops)
+const FARMING_ITEMS_SHEET = require('../../../assets/sprites/objects/items/farming-Plants-items.png');
+const ITEMS_SHEET_WIDTH = 32;
+const ITEMS_SHEET_HEIGHT = 240;
+const ITEM_FRAME = 16;
+
+// Row in the items sheet (row 0 is empty bag, crops start at row 1)
+const ITEM_ROW: Record<string, number> = {
+  corn: 1,
+  carrot: 2,
+  cauliflower: 3,
+  tomato: 4,
+  eggplant: 5,
+  blue_kale: 6,
+  leafy_greens: 7,
+  wheat: 8,
+  pumpkin: 9,
+  parsnip: 10,
+  purple_cabbage: 11,
+  radish: 12,
+  star_fruit: 13,
+  cucumber: 14,
 };
 
 interface Props {
@@ -68,24 +61,35 @@ export function SeedInventoryModal({ seeds, plotIndex, userId, tier, onClose }: 
           {plotIndex === null && (
             <Text style={modalStyles.emptyText}>Tap an empty plot in the garden first, then select a seed.</Text>
           )}
-          {seeds.map((seed) => (
-            <TouchableOpacity
-              key={seed.id}
-              style={[styles.seedItem, plotIndex === null && styles.seedItemDisabled]}
-              onPress={() => handlePlant(seed)}
-              disabled={plotIndex === null}
-              accessibilityLabel={`Plant ${seed.emotion} seed`}
-              accessibilityState={{ disabled: plotIndex === null }}
-            >
-              <Image
-                source={SEED_BAG_IMAGES[seed.emotion] ?? require('../../../assets/sprites/plants/seed_planted.png')}
-                style={styles.seedSprite}
-                contentFit="contain"
-                accessibilityLabel={`${seed.emotion} seed bag`}
-              />
-              <Text style={styles.seedLabel}>{seed.emotion}</Text>
-            </TouchableOpacity>
-          ))}
+          {seeds.map((seed) => {
+            const plantInfo = EMOTION_TO_PLANT[seed.emotion as Emotion];
+            // For trees/berries, show the empty seed bag (row 0). For crops, show the item.
+            const row = plantInfo ? (ITEM_ROW[plantInfo.spriteKey] ?? 0) : 0;
+            return (
+              <TouchableOpacity
+                key={seed.id}
+                style={[styles.seedItem, plotIndex === null && styles.seedItemDisabled]}
+                onPress={() => handlePlant(seed)}
+                disabled={plotIndex === null}
+                accessibilityLabel={`Plant ${seed.emotion} seed`}
+                accessibilityState={{ disabled: plotIndex === null }}
+              >
+                <View style={styles.seedSpriteContainer}>
+                  <Image
+                    source={FARMING_ITEMS_SHEET}
+                    style={{
+                      width: ITEMS_SHEET_WIDTH,
+                      height: ITEMS_SHEET_HEIGHT,
+                      marginTop: -row * ITEM_FRAME,
+                    }}
+                    contentFit="cover"
+                    accessibilityLabel={`${seed.emotion} seed`}
+                  />
+                </View>
+                <Text style={styles.seedLabel}>{seed.emotion}</Text>
+              </TouchableOpacity>
+            );
+          })}
           {seeds.length === 0 && <Text style={modalStyles.emptyText}>No seeds available</Text>}
         </View>
         <TouchableOpacity style={modalStyles.closeButton} onPress={onClose} accessibilityLabel="Close">
@@ -100,6 +104,6 @@ const styles = StyleSheet.create({
   seedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   seedItem: { alignItems: 'center', gap: spacing.xs, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: 8 },
   seedItemDisabled: { opacity: 0.4 },
-  seedSprite: { width: 48, height: 48 },
+  seedSpriteContainer: { width: ITEM_FRAME, height: ITEM_FRAME, overflow: 'hidden' },
   seedLabel: { fontSize: 11, color: colors.textSecondary, textAlign: 'center' },
 });

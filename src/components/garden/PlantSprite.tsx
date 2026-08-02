@@ -1,71 +1,102 @@
 import { View, Image } from 'react-native';
 import type { Plant } from '@/modules/garden';
-import type { Emotion } from '@/shared/types';
+import { EMOTION_TO_PLANT } from '@/shared/constants';
 
-const FRAME_SIZE = 32;
-const SHEET_WIDTH = 96;
-const STAGE_OFFSET: Record<string, number> = { sprout: 0, full: 1, bloom: 2 };
+const CROP_FRAME = 16;
+const CROP_SHEET_WIDTH = 64; // 4 columns × 16px
+const CROP_SHEET_HEIGHT = 240;
 
-const PLANT_SHEETS: Record<Emotion, ReturnType<typeof require>> = {
-  happy: require('../../../assets/sprites/plants/sunflower/happy-sunflower-planted.png'),
-  sad: require('../../../assets/sprites/plants/bleeding_heart/sad-bleeding-heart-planted.png'),
-  angry: require('../../../assets/sprites/plants/cactus/angry-cactus-planted.png'),
-  anxious: require('../../../assets/sprites/plants/passion_flower/anxious-passionflower-planted.png'),
-  calm: require('../../../assets/sprites/plants/lavender/calm-lavender-planted.png'),
-  grateful: require('../../../assets/sprites/plants/hydrangea/grateful-hydrangea-planted.png'),
-  love: require('../../../assets/sprites/plants/rose/love-rose-planted.png'),
-  hope: require('../../../assets/sprites/plants/daffodil/hope-daffodil-planted.png'),
-  excited: require('../../../assets/sprites/plants/bird_of_paradise/excited-bird-of-paradise-planted.png'),
-  lonely: require('../../../assets/sprites/plants/forget_me_not/lonely-forget-me-not-planted.png'),
-  proud: require('../../../assets/sprites/plants/orchid/proud-orchid-planted.png'),
-  confused: require('../../../assets/sprites/plants/wisteria/confused-wisteria-planted.png'),
-  peaceful: require('../../../assets/sprites/plants/lotus/peaceful-lotus-planted.png'),
-  nostalgic: require('../../../assets/sprites/plants/cherry_blossom/nostalgic-cherry-blossom-planted.png'),
-  jealous: require('../../../assets/sprites/plants/nightshade/jealous-nightshade-planted.png'),
-  inspired: require('../../../assets/sprites/plants/iris/inspired-iris-planted.png'),
-  guilty: require('../../../assets/sprites/plants/thistle/guilty-thistle-planted.png'),
-  curious: require('../../../assets/sprites/plants/snapdragon/curious-snapdragon-planted.png'),
-  frustrated: require('../../../assets/sprites/plants/bramble/frustrated-bramble-planted.png'),
-  content: require('../../../assets/sprites/plants/chamomile/content-chamomile-planted.png'),
-  overwhelmed: require('../../../assets/sprites/plants/morning_glory/overwhelmed-morning-glory-planted.png'),
-  brave: require('../../../assets/sprites/plants/protea/brave-protea-planted.png'),
-  embarrassed: require('../../../assets/sprites/plants/mimosa/embarrassed-mimosa-planted.png'),
-  surprised: require('../../../assets/sprites/plants/stargazer_lily/surprised-stargazer-lily-planted.png'),
-  bored: require('../../../assets/sprites/plants/dandelion/bored-dandelion-planted.png'),
-  determined: require('../../../assets/sprites/plants/gladiolus/determined-gladiolus-planted.png'),
-  compassionate: require('../../../assets/sprites/plants/aloe_vera/compassionate-aloe-vera-planted.png'),
-  melancholy: require('../../../assets/sprites/plants/bluebell/melancholy-bluebell-planted.png'),
-  joyful: require('../../../assets/sprites/plants/daisy/joyful-daisy-planted.png'),
-  vulnerable: require('../../../assets/sprites/plants/snowdrop/vulnerable-snowdrop-planted.png'),
+const TREES_SHEET_WIDTH = 192;
+const TREES_SHEET_HEIGHT = 112;
+
+const STAGE_COL: Record<string, number> = { seed: 0, sprout: 1, full: 2, bloom: 3 };
+
+const FARMING_PLANTS_SHEET = require('../../../assets/sprites/objects/items/Farming Plants.png');
+const TREES_BUSHES_SHEET = require('../../../assets/sprites/objects/trees/Trees, stumps and bushes.png');
+
+// Row index in Farming Plants.png (16px per row, corn uses rows 0-1 = 32px)
+const CROP_ROW: Record<string, { row: number; tall?: boolean }> = {
+  corn: { row: 0, tall: true },
+  carrot: { row: 2 },
+  cauliflower: { row: 3 },
+  tomato: { row: 4 },
+  eggplant: { row: 5 },
+  blue_kale: { row: 6 },
+  leafy_greens: { row: 7 },
+  wheat: { row: 8 },
+  pumpkin: { row: 9 },
+  parsnip: { row: 10 },
+  purple_cabbage: { row: 11 },
+  radish: { row: 12 },
+  star_fruit: { row: 13 },
+  cucumber: { row: 14 },
 };
 
-export function PlantSprite({ plant, size }: { plant: Plant; size?: number }) {
-  const s = size ?? FRAME_SIZE;
+// Trees and bushes from "Trees, stumps and bushes.png" (192x112, 16px grid: 12 cols × 7 rows)
+// Trees are 2×2 tiles (32×32px), bushes are 1×1 tiles (16×16px)
+// Bare tree: row 0-1, col 1-2. Fruited trees at col 3-4, 5-6, 7-8, 9-10
+// Bare bush: row 3, col 1. Berry bushes at row 3, cols 2-4
+const TILE = 16;
+const TREE_BUSH_SPRITES: Record<string, { bareX: number; bareY: number; fruitX: number; fruitY: number; width: number; height: number }> = {
+  apple_tree:   { bareX: 1 * TILE, bareY: 0, fruitX: 3 * TILE, fruitY: 0, width: 32, height: 32 },
+  orange_tree:  { bareX: 1 * TILE, bareY: 0, fruitX: 5 * TILE, fruitY: 0, width: 32, height: 32 },
+  pear_tree:    { bareX: 1 * TILE, bareY: 0, fruitX: 7 * TILE, fruitY: 0, width: 32, height: 32 },
+  peach_tree:   { bareX: 1 * TILE, bareY: 0, fruitX: 9 * TILE, fruitY: 0, width: 32, height: 32 },
+  red_berry:    { bareX: 1 * TILE, bareY: 3 * TILE, fruitX: 2 * TILE, fruitY: 3 * TILE, width: 16, height: 16 },
+  purple_berry: { bareX: 1 * TILE, bareY: 3 * TILE, fruitX: 3 * TILE, fruitY: 3 * TILE, width: 16, height: 16 },
+  blueberry:    { bareX: 1 * TILE, bareY: 3 * TILE, fruitX: 4 * TILE, fruitY: 3 * TILE, width: 16, height: 16 },
+};
 
-  if (plant.growthStage === 'seed') {
+export function PlantSprite({ plant }: { plant: Plant }) {
+  const plantInfo = EMOTION_TO_PLANT[plant.emotion];
+
+  // Guard against plants with old/removed emotion values in local DB
+  if (!plantInfo) return null;
+
+  // Trees and berry bushes: bare until bloom, then fruited
+  if (plantInfo.category === 'tree' || plantInfo.category === 'berry') {
+    const sprites = TREE_BUSH_SPRITES[plantInfo.spriteKey];
+    if (!sprites) return null;
+
+    const isFruited = plant.growthStage === 'bloom';
+    const sx = isFruited ? sprites.fruitX : sprites.bareX;
+    const sy = isFruited ? sprites.fruitY : sprites.bareY;
+
     return (
-      <Image
-        source={require('../../../assets/sprites/plants/seed_planted.png')}
-        style={{ width: s, height: s }}
-        resizeMode="stretch"
-        accessibilityLabel={`${plant.emotion} seed`}
-      />
+      <View style={{ width: sprites.width, height: sprites.height, overflow: 'hidden' }} accessibilityLabel={`${plant.emotion} ${plantInfo.name}, ${plant.growthStage} stage`}>
+        <Image
+          source={TREES_BUSHES_SHEET}
+          style={{
+            width: TREES_SHEET_WIDTH,
+            height: TREES_SHEET_HEIGHT,
+            marginLeft: -sx,
+            marginTop: -sy,
+          }}
+          resizeMode="cover"
+        />
+      </View>
     );
   }
 
-  const frameIndex = STAGE_OFFSET[plant.growthStage] ?? 0;
-  const scale = s / FRAME_SIZE;
+  // Crops use the Farming Plants spritesheet
+  const cropInfo = CROP_ROW[plantInfo.spriteKey];
+  if (!cropInfo) return null;
+
+  const col = STAGE_COL[plant.growthStage] ?? 0;
+  const isTall = cropInfo.tall === true;
+  const frameHeight = isTall ? CROP_FRAME * 2 : CROP_FRAME;
 
   return (
-    <View style={{ width: s, height: s, overflow: 'hidden' }} accessibilityLabel={`${plant.emotion} plant, ${plant.growthStage} stage`}>
+    <View style={{ width: CROP_FRAME, height: frameHeight, overflow: 'hidden' }} accessibilityLabel={`${plant.emotion} ${plantInfo.name}, ${plant.growthStage} stage`}>
       <Image
-        source={PLANT_SHEETS[plant.emotion]}
+        source={FARMING_PLANTS_SHEET}
         style={{
-          width: SHEET_WIDTH * scale,
-          height: s,
-          marginLeft: -frameIndex * s,
+          width: CROP_SHEET_WIDTH,
+          height: CROP_SHEET_HEIGHT,
+          marginLeft: -col * CROP_FRAME,
+          marginTop: -cropInfo.row * CROP_FRAME,
         }}
-        resizeMode="stretch"
+        resizeMode="cover"
       />
     </View>
   );
